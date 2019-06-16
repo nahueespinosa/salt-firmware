@@ -1,8 +1,12 @@
-# DIMBA
-## Diseño e Implementación del Monitor de Barreras
+# SALT-FIRMWARE
+## Diseï¿½o e Implementaciï¿½n del Sistema de Aislamiento Limitado/Total
 
-El presente proyecto tiene por objetivo desarrollar el subsistema de Nivel Monitor, ubicado sobre cada paso a nivel, que sensará las señales de entrada y transferirá datos a una central remota de monitoreo correspondiente al Nivel de Gestión. El subsistema de Nivel de Gestión, ubicado en la central remota de monitoreo, queda fuera del alcance del presente proyecto.
+El presente proyecto tiene por objetivo desarrollar el firmware necesario para el funcionamiento de un SALT.
+
+El mismo es un dispositivo de seguridad ferroviaria que permite al maquinista de una formacion detenida por inconvenientes tecnicos activar un modo de funcionamiento limitado.
+
+El equipo toma el control de las seÃ±ales de corte de tracciÃ³n y freno de emergencia permitiendo al conductor mover la formaciÃ³n siempre que no se supere una velocidad mÃ¡xima y que exista una seÃ±al de permiso de circulaciÃ³n emitida por la central operativa del ramal.
 
 ## Diagrama de Bloques Funcionales
-![Diagrama de Bloques Funcionales](../master/doc/BlockDiagram.png)
+![Diagrama de Bloques Funcionales](../master/doc/diagrama_conceptual.jpeg)
 

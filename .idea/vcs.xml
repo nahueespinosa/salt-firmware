@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="VcsDirectoryMappings">
+    <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/third-party/MQTT-C" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/third-party/amazon-freertos" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/third-party/ceedling" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/third-party/ceedling/plugins/fake_function_framework" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/third-party/rkh" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/third-party/rkh/third-party/ceedling" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/third-party/rkh/third-party/ceedling/plugins/fake_function_framework" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/third-party/ssp" vcs="Git" />
+  </component>
+</project>
