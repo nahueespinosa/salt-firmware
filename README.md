@@ -1,5 +1,5 @@
 # SALT-FIRMWARE
-## Dise�o e Implementaci�n del Sistema de Aislamiento Limitado/Total
+## Diseño e Implementación del Sistema de Aislamiento Limitado/Total
 
 El presente proyecto tiene por objetivo desarrollar el firmware necesario para el funcionamiento de un SALT.
 
