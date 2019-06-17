@@ -1,44 +1,78 @@
 cmake_minimum_required(VERSION 3.14)
-project(SALT-FIRMWARE)
+project(SALT)
 
 set(CMAKE_CXX_STANDARD 14)
 
+set(file_search_list
+        "${CMAKE_HOME_DIRECTORY}/dimba/*.h"
+        "${CMAKE_HOME_DIRECTORY}/dimba/*.c"
+        "${CMAKE_HOME_DIRECTORY}/dimba/*.cpp"
+
+        "${CMAKE_HOME_DIRECTORY}/salt/*.h"
+        "${CMAKE_HOME_DIRECTORY}/salt/*.c"
+        "${CMAKE_HOME_DIRECTORY}/salt/*.cpp"
+
+        "${CMAKE_HOME_DIRECTORY}/third-party/ceedling/vendor/*.h"
+        "${CMAKE_HOME_DIRECTORY}/third-party/ceedling/vendor/*.c"
+        "${CMAKE_HOME_DIRECTORY}/third-party/ceedling/vendor/*.cpp"
+
+        "${CMAKE_HOME_DIRECTORY}/third-party/jWrite/*.h"
+        "${CMAKE_HOME_DIRECTORY}/third-party/jWrite/*.c"
+        "${CMAKE_HOME_DIRECTORY}/third-party/jWrite/*.cpp"
+
+        "${CMAKE_HOME_DIRECTORY}/third-party/LPCOpen/*.h"
+        "${CMAKE_HOME_DIRECTORY}/third-party/LPCOpen/*.c"
+        "${CMAKE_HOME_DIRECTORY}/third-party/LPCOpen/*.cpp"
+
+        "${CMAKE_HOME_DIRECTORY}/third-party/MQTT-C/*.h"
+        "${CMAKE_HOME_DIRECTORY}/third-party/MQTT-C/*.c"
+        "${CMAKE_HOME_DIRECTORY}/third-party/MQTT-C/*.cpp"
+
+        "${CMAKE_HOME_DIRECTORY}/third-party/rkh/*.h"
+        "${CMAKE_HOME_DIRECTORY}/third-party/rkh/*.c"
+        "${CMAKE_HOME_DIRECTORY}/third-party/rkh/*.cpp"
+
+        "${CMAKE_HOME_DIRECTORY}/third-party/sapi/*.h"
+        "${CMAKE_HOME_DIRECTORY}/third-party/sapi/*.c"
+        "${CMAKE_HOME_DIRECTORY}/third-party/sapi/*.cpp"
+
+        "${CMAKE_HOME_DIRECTORY}/third-party/ssp/*.h"
+        "${CMAKE_HOME_DIRECTORY}/third-party/ssp/*.c"
+        "${CMAKE_HOME_DIRECTORY}/third-party/ssp/*.cpp"
+        )
+
+set(file_remove_list
+        "${CMAKE_HOME_DIRECTORY}/dimba/arch/win/*.h"
+        "${CMAKE_HOME_DIRECTORY}/dimba/arch/win/*.c"
+        "${CMAKE_HOME_DIRECTORY}/dimba/arch/win/*.cpp"
+
+        "${CMAKE_HOME_DIRECTORY}/third-party/MQTT-C/examples/*.h"
+        "${CMAKE_HOME_DIRECTORY}/third-party/MQTT-C/examples/*.c"
+        "${CMAKE_HOME_DIRECTORY}/third-party/MQTT-C/examples/*.cpp"
+
+        "${CMAKE_HOME_DIRECTORY}/third-party/rkh/demo/*.h"
+        "${CMAKE_HOME_DIRECTORY}/third-party/rkh/demo/*.c"
+        "${CMAKE_HOME_DIRECTORY}/third-party/rkh/demo/*.cpp"
+
+        "${CMAKE_HOME_DIRECTORY}/third-party/rkh/doc/*.h"
+        "${CMAKE_HOME_DIRECTORY}/third-party/rkh/doc/*.c"
+        "${CMAKE_HOME_DIRECTORY}/third-party/rkh/doc/*.cpp"
+
+        "${CMAKE_HOME_DIRECTORY}/third-party/rkh/template/*.h"
+        "${CMAKE_HOME_DIRECTORY}/third-party/rkh/template/*.c"
+        "${CMAKE_HOME_DIRECTORY}/third-party/rkh/template/*.cpp"
+
+        "${CMAKE_HOME_DIRECTORY}/third-party/ssp/tests/*.h"
+        "${CMAKE_HOME_DIRECTORY}/third-party/ssp/tests/*.c"
+        "${CMAKE_HOME_DIRECTORY}/third-party/ssp/tests/*.cpp"
+        )
+
 MACRO(SOURCE_FILES_DIRECTORIES return_list)
-    FILE(GLOB_RECURSE h_list
-            "${CMAKE_HOME_DIRECTORY}/dimba/*.h"
-            "${CMAKE_HOME_DIRECTORY}/third-party/ceedling/*.h"
-            "${CMAKE_HOME_DIRECTORY}/third-party/jWrite/*.h"
-            "${CMAKE_HOME_DIRECTORY}/third-party/LPCOpen/*.h"
-            "${CMAKE_HOME_DIRECTORY}/third-party/MQTT-C/*.h"
-            "${CMAKE_HOME_DIRECTORY}/third-party/rkh/*.h"
-            "${CMAKE_HOME_DIRECTORY}/third-party/sapi/*.h"
-            "${CMAKE_HOME_DIRECTORY}/third-party/ssp/*.h"
-            )
-    SET(file_list ${h_list})
-
-    FILE(GLOB_RECURSE c_list
-            "${CMAKE_HOME_DIRECTORY}/dimba/*.c"
-            "${CMAKE_HOME_DIRECTORY}/third-party/ceedling/*.c"
-            "${CMAKE_HOME_DIRECTORY}/third-party/jWrite/*.c"
-            "${CMAKE_HOME_DIRECTORY}/third-party/LPCOpen/*.c"
-            "${CMAKE_HOME_DIRECTORY}/third-party/MQTT-C/*.c"
-            "${CMAKE_HOME_DIRECTORY}/third-party/rkh/*.c"
-            "${CMAKE_HOME_DIRECTORY}/third-party/sapi/*.c"
-            "${CMAKE_HOME_DIRECTORY}/third-party/ssp/*.c"
-            )
-    SET(file_list ${file_list} ${c_list})
-
-    FILE(GLOB_RECURSE cpplist
-            "${CMAKE_HOME_DIRECTORY}/dimba/*.cpp"
-            "${CMAKE_HOME_DIRECTORY}/third-party/ceedling/*.cpp"
-            "${CMAKE_HOME_DIRECTORY}/third-party/jWrite/*.cpp"
-            "${CMAKE_HOME_DIRECTORY}/third-party/LPCOpen/*.cpp"
-            "${CMAKE_HOME_DIRECTORY}/third-party/MQTT-C/*.cpp"
-            "${CMAKE_HOME_DIRECTORY}/third-party/rkh/*.cpp"
-            "${CMAKE_HOME_DIRECTORY}/third-party/sapi/*.cpp"
-            "${CMAKE_HOME_DIRECTORY}/third-party/ssp/*.cpp"
-            )
-    SET(file_list ${file_list} ${cpplist})
+    FILE(GLOB_RECURSE file_list ${file_search_list})
+    FILE(GLOB_RECURSE file_remove_list ${file_remove_list})
+    IF( file_remove_list )
+        list(REMOVE_ITEM file_list ${file_remove_list})
+    ENDIF()
 
     SET(dir_list "")
     FOREACH(file_path ${file_list})
@@ -50,41 +84,12 @@ MACRO(SOURCE_FILES_DIRECTORIES return_list)
 ENDMACRO()
 
 MACRO(SOURCE_FILES return_list)
-    FILE(GLOB_RECURSE h_list
-            "${CMAKE_HOME_DIRECTORY}/dimba/*.h"
-            "${CMAKE_HOME_DIRECTORY}/third-party/ceedling/*.h"
-            "${CMAKE_HOME_DIRECTORY}/third-party/jWrite/*.h"
-            "${CMAKE_HOME_DIRECTORY}/third-party/LPCOpen/*.h"
-            "${CMAKE_HOME_DIRECTORY}/third-party/MQTT-C/*.h"
-            "${CMAKE_HOME_DIRECTORY}/third-party/rkh/*.h"
-            "${CMAKE_HOME_DIRECTORY}/third-party/sapi/*.h"
-            "${CMAKE_HOME_DIRECTORY}/third-party/ssp/*.h"
-            )
-    SET(file_list ${h_list})
 
-    FILE(GLOB_RECURSE c_list
-            "${CMAKE_HOME_DIRECTORY}/dimba/*.c"
-            "${CMAKE_HOME_DIRECTORY}/third-party/ceedling/*.c"
-            "${CMAKE_HOME_DIRECTORY}/third-party/jWrite/*.c"
-            "${CMAKE_HOME_DIRECTORY}/third-party/LPCOpen/*.c"
-            "${CMAKE_HOME_DIRECTORY}/third-party/MQTT-C/*.c"
-            "${CMAKE_HOME_DIRECTORY}/third-party/rkh/*.c"
-            "${CMAKE_HOME_DIRECTORY}/third-party/sapi/*.c"
-            "${CMAKE_HOME_DIRECTORY}/third-party/ssp/*.c"
-            )
-    SET(file_list ${file_list} ${c_list})
-
-    FILE(GLOB_RECURSE cpp_list
-            "${CMAKE_HOME_DIRECTORY}/dimba/*.cpp"
-            "${CMAKE_HOME_DIRECTORY}/third-party/ceedling/*.cpp"
-            "${CMAKE_HOME_DIRECTORY}/third-party/jWrite/*.cpp"
-            "${CMAKE_HOME_DIRECTORY}/third-party/LPCOpen/*.cpp"
-            "${CMAKE_HOME_DIRECTORY}/third-party/MQTT-C/*.cpp"
-            "${CMAKE_HOME_DIRECTORY}/third-party/rkh/*.cpp"
-            "${CMAKE_HOME_DIRECTORY}/third-party/sapi/*.cpp"
-            "${CMAKE_HOME_DIRECTORY}/third-party/ssp/*.cpp"
-            )
-    SET(file_list ${file_list} ${cpp_list})
+    FILE(GLOB_RECURSE file_list ${file_search_list})
+    FILE(GLOB_RECURSE file_remove_list ${file_remove_list})
+    IF( file_remove_list )
+        list(REMOVE_ITEM file_list ${file_remove_list})
+    ENDIF()
 
     SET(${return_list} ${file_list})
 ENDMACRO()
@@ -149,6 +154,9 @@ include_directories(${header_directories})
 RKH_TEMPLETE_DEFINES()
 #CESE_TEMPLETE_DEFINES()
 
+#FOREACH(file ${SRC_LIST})
+#    message(${file})
+#ENDFOREACH()
 add_executable(clion ${SRC_LIST})
 
 add_custom_target(generate_elf COMMAND make -C ./.. all)

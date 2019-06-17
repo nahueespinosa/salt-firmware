@@ -95,7 +95,7 @@ dimbaCfg_topic(char *t)
 }
 
 int
-main(int argc, char *argv[])
+mainDimba(int argc, char *argv[])
 {
     bsp_init(argc, argv);
 
