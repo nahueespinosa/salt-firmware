@@ -52,7 +52,7 @@
 		<link>
 			<name>src/salt</name>
 			<type>2</type>
-			<locationURI>virtual:/virtual</locationURI>
+			<locationURI>PARENT-4-PROJECT_LOC/salt</locationURI>
 		</link>
 		<link>
 			<name>src/ssp</name>
@@ -333,11 +333,6 @@
 			<name>src/rkh/rkhtrc_stream.c</name>
 			<type>1</type>
 			<locationURI>PARENT-4-PROJECT_LOC/third-party/rkh/source/trc/src/rkhtrc_stream.c</locationURI>
-		</link>
-		<link>
-			<name>src/salt/main.c</name>
-			<type>1</type>
-			<locationURI>PARENT-4-PROJECT_LOC/salt/main.c</locationURI>
 		</link>
 		<link>
 			<name>src/ssp/ssp.c</name>

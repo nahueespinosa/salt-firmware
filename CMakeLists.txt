@@ -153,6 +153,7 @@ include_directories(${header_directories})
 
 RKH_TEMPLETE_DEFINES()
 #CESE_TEMPLETE_DEFINES()
+remove_definitions(__unix__)
 
 #FOREACH(file ${SRC_LIST})
 #    message(${file})
