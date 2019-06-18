@@ -151,13 +151,14 @@ SOURCE_FILES(SRC_LIST)
 
 include_directories(${header_directories})
 
+#FOREACH(file ${SRC_LIST})
+#    message(${file})
+#ENDFOREACH()
+
 RKH_TEMPLETE_DEFINES()
 #CESE_TEMPLETE_DEFINES()
 remove_definitions(__unix__)
 
-#FOREACH(file ${SRC_LIST})
-#    message(${file})
-#ENDFOREACH()
 add_executable(clion ${SRC_LIST})
 
 add_custom_target(generate_elf COMMAND make -C ./.. all)

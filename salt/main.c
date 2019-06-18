@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "sapi.h"
+#include "ledPanel.h"
 
 int
 main(int argc, char *argv[])
@@ -13,6 +14,15 @@ main(int argc, char *argv[])
     // set mem inaccessible-by-default off
 
     boardConfig();
+    led_panel_init();
+
+    LedPanelCfg testConfig;
+    testConfig.digit0 = 1,
+    testConfig.digit1 = 2;
+    testConfig.digit2 = 3;
+    testConfig.digit3 = 8;
+
+    led_panel_set_cfg(&testConfig);
 
     while(1) {
 
