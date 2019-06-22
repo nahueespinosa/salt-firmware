@@ -1,7 +1,8 @@
 /**
  *  \file       ledPanel.h
- *  \brief      AS1116 driver.
+ *  \brief      Led panel controller driver.
  */
+
 
 /* -------------------------- Development history -------------------------- */
 /*
@@ -14,12 +15,18 @@
  */
 
 /* --------------------------------- Notes --------------------------------- */
+
+/*
+ * https://github.com/DeanIsMe/SevSeg
+ *
+ */
+
 /* --------------------------------- Module -------------------------------- */
 #ifndef __LEDPANEL_H__
 #define __LEDPANEL_H__
 
 /* ----------------------------- Include files ----------------------------- */
-#include "rkht.h"
+#include "rkh.h"
 #include "sapi_spi.h"
 
 /* ---------------------- External C language linkage ---------------------- */
@@ -29,108 +36,92 @@ extern "C" {
 
 /* --------------------------------- Macros -------------------------------- */
 /* -------------------------------- Constants ------------------------------ */
-#define LED_R_MASK      (1 << 0)
-#define LED_G_MASK      (1 << 1)
-#define LED_B_MASK      (1 << 2)
+#define LED_R_POS       0
+#define LED_G_POS       2
+#define LED_B_POS       1
+#define LED_R_MASK      (1 << LED_R_POS)
+#define LED_G_MASK      (1 << LED_G_POS)
+#define LED_B_MASK      (1 << LED_B_POS)
 
 #define NUM_DIGITS      4
 #define NUM_COUNT       10
 
-#define AS_REG_NOP					        0x00
-#define PANEL_REG_DIGIT0				    0x01
-#define PANEL_REG_DIGIT1				    0x02
-#define PANEL_REG_DIGIT2				    0x03
-#define PANEL_REG_DIGIT3				    0x04
-#define PANEL_REG_DIGIT4				    0x05
-#define PANEL_REG_DIGIT5				    0x06
-#define PANEL_REG_DIGIT6				    0x07
-#define PANEL_REG_DIGIT7				    0x08
-#define PANEL_REG_DECODE_MODE			    0x09
-#define PANEL_REG_GLOBAL_INTENTSITY         0x0A
-#define PANEL_REG_SCAN_LIMIT			    0x0B
-#define PANEL_REG_SHUTDOWN				    0x0C
-#define PANEL_REG_FEATURE				    0x0E
-#define PANEL_REG_DISPLAY_TEST_MODE         0x0F
-#define PANEL_REG_DIG01_INTENSITY		    0x10
-#define PANEL_REG_DIG23_INTENSITY		    0x11
-#define PANEL_REG_DIG45_INTENSITY		    0x12
-#define PANEL_REG_DIG67_INTESITY		    0x13
+#define DIGIT_RED_POS   0
+#define DIGIT_BLUE_POS  1
+#define DIGIT_GREEN_POS 2
+#define DIGIT_0_POS     3
+#define DIGIT_1_POS     4
+#define DIGIT_2_POS     5
+#define DIGIT_3_POS     6
 
-// feature register
-#define PANEL_FEATURE_CLK_EN_bm				(1<<0)
-#define PANEL_FEATURE_REG_RES_bm			(1<<1)
-#define PANEL_FEATURE_DECODE_SEL_bm			(1<<2)
-#define PANEL_FEATURE_BLINK_EN_bm			(1<<4)
-#define PANEL_FEATURE_BLINK_FREQ_SEL_bm		(1<<5)
-#define PANEL_FEATURE_SYNC_bm				(1<<6)
-#define PANEL_FEATURE_BLINK_START_bm		(1<<7)
-
-// shutdown register
-#define PANEL_SHUTDOWN_OFF_MODE_RESET	    (0x00)
-#define PANEL_SHUTDOWN_OFF_MODE			    (0x80)
-#define PANEL_SHUTDOWN_NORMAL_MODE_RESET	(0x01)
-#define PANEL_SHUTDOWN_NORMAL_MODE			(0x81)
-
-#define PANEL_WRITE_BIT_bm				(1<<6)
+#define LED_ON_SEGMENT_POS          PANEL_SEGMENT_A_POS
+#define LED_CT_SEGMENT_POS          PANEL_SEGMENT_E_POS
+#define LED_FE_SEGMENT_POS          PANEL_SEGMENT_C_POS
+#define LED_GPS_SEGMENT_POS         PANEL_SEGMENT_D_POS
+#define LED_REMOTE_OP_SEGMENT_POS      PANEL_SEGMENT_DP_POS
+#define LED_ISOLATED_SEGMENT_POS    PANEL_SEGMENT_F_POS
 
 static const rui8_t digitCodeMap[] = {
-        //     GFEDCBA  Segments      7-segment map:
-        0b00111111, // 0   "0"          AAA
-        0b00000110, // 1   "1"         F   B
-        0b01011011, // 2   "2"         F   B
-        0b01001111, // 3   "3"          GGG
-        0b01100110, // 4   "4"         E   C
-        0b01101101, // 5   "5"         E   C
-        0b01111101, // 6   "6"          DDD
-        0b00000111, // 7   "7"
+        //     DpABCDEFG  Segments      7-segment map:
+        0b01111110, // 0   "0"          AAA
+        0b00110000, // 1   "1"         F   B
+        0b01101101, // 2   "2"         F   B
+        0b01111001, // 3   "3"          GGG
+        0b00110011, // 4   "4"         E   C
+        0b01011011, // 5   "5"         E   C
+        0b01011111, // 6   "6"          DDD
+        0b01110000, // 7   "7"
         0b01111111, // 8   "8"
-        0b01101111, // 9   "9"
-        0b01110111, // 65  'A'
-        0b01111100, // 66  'b'
-        0b00111001, // 67  'C'
-        0b01011110, // 68  'd'
-        0b01111001, // 69  'E'
-        0b01110001, // 70  'F'
-        0b00111101, // 71  'G'
-        0b01110110, // 72  'H'
-        0b00000110, // 73  'I'
-        0b00001110, // 74  'J'
-        0b01110110, // 75  'K'  Same as 'H'
-        0b00111000, // 76  'L'
-        0b00000000, // 77  'M'  NO DISPLAY
-        0b01010100, // 78  'n'
-        0b00111111, // 79  'O'
-        0b01110011, // 80  'P'
-        0b01100111, // 81  'q'
-        0b01010000, // 82  'r'
-        0b01101101, // 83  'S'
-        0b01111000, // 84  't'
-        0b00111110, // 85  'U'
-        0b00111110, // 86  'V'  Same as 'U'
-        0b00000000, // 87  'W'  NO DISPLAY
-        0b01110110, // 88  'X'  Same as 'H'
-        0b01101110, // 89  'y'
-        0b01011011, // 90  'Z'  Same as '2'
-        0b00000000, // 32  ' '  BLANK
-        0b01000000, // 45  '-'  DASH
-        0b10000000, // 46  '.'  PERIOD
-        0b01100011, // 42 '*'  DEGREE ..
+        0b01111011, // 9   "9"
+        0b01110111, // 10  'A'
+        0b00011111, // 11  'b'
+        0b01001110, // 12  'C'
+        0b00111101, // 13  'd'
+        0b01001111, // 14  'E'
+        0b01000111, // 15  'F'
+        0b01011110, // 16  'G'
+        0b00110111, // 17  'H'
+        0b00110000, // 18  'I'
+        0b00111000, // 19  'J'
+        0b00110111, // 20  'K'  Same as 'H'
+        0b00001110, // 21  'L'
+        0b00000000, // 22  'M'  NO DISPLAY
+        0b00010101, // 23  'n'
+        0b01111110, // 24  'O'
+        0b01100111, // 25  'P'
+        0b01110011, // 26  'q'
+        0b00000101, // 27  'r'
+        0b01011011, // 28  'S'
+        0b00001111, // 29  't'
+        0b00111110, // 30  'U'
+        0b00111110, // 31  'V'  Same as 'U'
+        0b00000000, // 32  'W'  NO DISPLAY
+        0b00110111, // 33  'X'  Same as 'H'
+        0b00111011, // 34  'y'
+        0b01101101, // 35  'Z'  Same as '2'
+        0b00000000, // 36  ' '  BLANK
+        0b00000001, // 37  '-'  DASH
+        0b10000000, // 38  '.'  PERIOD
+        0b01100011, // 39 '*'  DEGREE ..
 };
 
-const rui8_t * const numeralCodes = digitCodeMap;
-const rui8_t * const alphaCodes = digitCodeMap + 10;
+extern const rui8_t * const numeralCodes;
+extern const rui8_t * const alphaCodes;
 
-static const rui8_t digitRegMap[] = {
-        PANEL_REG_DIGIT0,
-        PANEL_REG_DIGIT1,
-        PANEL_REG_DIGIT2,
-        PANEL_REG_DIGIT3,
-        PANEL_REG_DIGIT4,
-        PANEL_REG_DIGIT5,
-        PANEL_REG_DIGIT6,
-        PANEL_REG_DIGIT7,
-};
+#define PERIOD_ALPHA_POS 38
+
 /* ------------------------------- Data types ------------------------------ */
+
+typedef enum{
+    BLACK   = 0x00,
+    WHITE   = LED_R_MASK | LED_G_MASK | LED_B_MASK,
+    RED     = LED_R_MASK,
+    GREEN   = LED_G_MASK,
+    BLUE    = LED_B_MASK,
+    YELLOW  = LED_R_MASK | LED_G_MASK,
+    CYAN    = LED_G_MASK | LED_B_MASK,
+    MAGENTA = LED_R_MASK | LED_B_MASK,
+} LedRgbCfg_t;
 
 typedef struct LedPanelCfg {
     rui8_t pointPosition; // digit with point if <4
@@ -138,19 +129,20 @@ typedef struct LedPanelCfg {
     rui8_t digit1;
     rui8_t digit2;
     rui8_t digit3;
-    rui8_t led0;
-    rui8_t led1;
-    rui8_t led2;
-    rui8_t led3;
-    rui8_t led4;
-    rui8_t led5;
+    LedRgbCfg_t ledOn;
+    LedRgbCfg_t ledCt;
+    LedRgbCfg_t ledFe;
+    LedRgbCfg_t ledGps;
+    LedRgbCfg_t ledRemoteOp;
+    LedRgbCfg_t ledIsolated;
 } LedPanelCfg;
 
 
 /* -------------------------- External variables --------------------------- */
 /* -------------------------- Function prototypes -------------------------- */
-void led_panel_init(void);
-void led_panel_set_cfg(LedPanelCfg* cfg);
+void ledPanelInit(void);
+void ledPanelSetCfg(LedPanelCfg* cfg);
+void ledPanelTestSalt(void);
 
 /* -------------------- External C language linkage end -------------------- */
 #ifdef __cplusplus

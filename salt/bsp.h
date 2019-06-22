@@ -8,12 +8,15 @@
 /* -------------------------- Development history -------------------------- */
 /*
  *  2018.05.23  DaBa  v0.0.01  Initial version
+ *  2019.06.17  IMD  v0.0.02  SALT changes
+ *
  */
 
 /* -------------------------------- Authors -------------------------------- */
 /*
  *  LeFr  Leandro Francucci  lf@vortexmakes.com
- *  DaBa  Dario Baliña       dariosb@gmail.com
+ *  DaBa  Dario Baliï¿½a       dariosb@gmail.com
+ *  IMD  Ivan Mariano Di Vito divitoivan@gmail.com.com
  */
 
 /* --------------------------------- Module -------------------------------- */
@@ -21,7 +24,12 @@
 #define __BSP_H__
 
 /* ----------------------------- Include files ----------------------------- */
+#include "rkh.h"
+
+
 /* ---------------------- External C language linkage ---------------------- */
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -39,7 +47,7 @@ enum
 };
 
 /*
- * User trace events id´s
+ * User trace events idï¿½s
  */
 enum
 {
@@ -47,7 +55,7 @@ enum
 };
 
 /*
- * Status Led´s 
+ * Status Ledï¿½s 
  */
 typedef enum
 {
@@ -59,7 +67,7 @@ typedef enum
 } Status_t;
 
 /*
- * Status Led´s 
+ * Status Ledï¿½s 
  */
 
 /* ------------------------------- Data types ------------------------------ */
