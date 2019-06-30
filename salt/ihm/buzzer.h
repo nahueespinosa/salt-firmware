@@ -1,29 +1,26 @@
 /**
- *  \file       anSampler.h
- *  \brief      Specification of analog signal sampler.
+ *  \file       buzzer.h
+ *  \brief      buzzer driver.
  */
+
 
 /* -------------------------- Development history -------------------------- */
 /*
- *  2018.05.14  LeFr  v1.0.00  Initial version
+ *  2019.06.17  IMD  v1.0.00  Initial version
  */
 
 /* -------------------------------- Authors -------------------------------- */
 /*
- *  LeFr  Leandro Francucci lf@vortexmakes.com
+ *  IMD  Ivan Mariano Di Vito divitoivan@gmail.com.com
  */
 
 /* --------------------------------- Notes --------------------------------- */
 /* --------------------------------- Module -------------------------------- */
-#ifndef __ANSAMPLER_H__
-#define __ANSAMPLER_H__
+#ifndef __BUZZER_H__
+#define __BUZZER_H__
 
 /* ----------------------------- Include files ----------------------------- */
-#include "CirBuffer.h"
-#include "epoch.h"
-#include "anIn.h"
-#include "mTimeCfg.h"
-#include "publisher.h"
+#include "sapi.h"
 
 /* ---------------------- External C language linkage ---------------------- */
 #ifdef __cplusplus
@@ -32,28 +29,12 @@ extern "C" {
 
 /* --------------------------------- Macros -------------------------------- */
 /* -------------------------------- Constants ------------------------------ */
-#define AN_SAMPLING_RATE_SEC (MTIME_ANSAMPLE_PUT_PERIOD * MTIME_TIME_TICK)/1000
-#define MAX_AN_NUM_SAMPLES   (32 << NUM_PUBTIME_STEPS)
-#define NUM_AN_SIGNALS       NUM_ANIN_SIGNALS
-
-/* ................................ Signals ................................ */
-/* ........................ Declares active object ......................... */
 /* ------------------------------- Data types ------------------------------ */
-typedef unsigned short SampleValue;
-typedef SampleValue AnSignalValue[MAX_AN_NUM_SAMPLES];
-typedef struct AnSampleSet AnSampleSet;
-struct AnSampleSet
-{
-    Epoch timeStamp;    /** Updated every sampling time */
-    AnSignalValue anSignal[NUM_AN_SIGNALS];
-};
-
 /* -------------------------- External variables --------------------------- */
 /* -------------------------- Function prototypes -------------------------- */
-int anSampler_init(void);
-int anSampler_put(void);
-int anSampler_getSet(AnSampleSet *set, int nSamples);
-int anSampler_getNumSamples(void);
+void buzzerInit();
+void buzzerSet(bool_t on);
+bool_t buzzerGet();
 
 /* -------------------- External C language linkage end -------------------- */
 #ifdef __cplusplus

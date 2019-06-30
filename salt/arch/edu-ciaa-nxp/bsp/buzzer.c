@@ -1,69 +1,48 @@
 /**
- *  \file       mTimeTble.c
- * 	\bried      mTime timers Table.
+ *  \file       buzzer.c
+ *  \brief      buzzer driver.
  */
 
 /* -------------------------- Development history -------------------------- */
 /*
- *  2018.05.17  DaBa  v1.0.00  Initial version
+ *  2019.06.17  IMD  v1.0.00  Initial version
  */
 
 /* -------------------------------- Authors -------------------------------- */
 /*
- *  DaBa  Dario Baliña       db@vortexmakes.com
+ *  IMD  Ivan Mariano Di Vito divitoivan@gmail.com.com
  */
 
 /* --------------------------------- Notes --------------------------------- */
 /* ----------------------------- Include files ----------------------------- */
-#include <stdio.h>
-#include "mTime.h"
-#include "mTimeCfg.h"
-
-#include "din.h"
-#include "anIn.h"
-#include "epoch.h"
-#include "modpwr.h"
+#include "buzzer.h"
+#include "sapi.h"
 
 /* ----------------------------- Local macros ------------------------------ */
 /* ------------------------------- Constants ------------------------------- */
+
+#define BUZZER_PIN          GPIO4
+
 /* ---------------------------- Local data types --------------------------- */
 /* ---------------------------- Global variables --------------------------- */
 /* ---------------------------- Local variables ---------------------------- */
-static void(* const actions_100[])( void ) =
-{
-#ifdef MODPWR_CTRL_ENABLE
-	modPwr_ctrl, 
-#endif
-    epoch_updateByStep,
-    dIn_scan,
-    NULL
-};
-
-static void(* const actions_1000[])( void ) =
-{
-	anIn_captureAndFilter, 
-    NULL
-};
-
-static void(* const actions_10000[])( void ) =
-{
-	anIn_update, 
-    NULL
-};
-
-const timerChain_t timerChain[] =
-{
-	{ MTIME_EPOCH_UPD_PERIOD, actions_100 },
-	{ MTIME_ANIN_READANDFILTER_PERIOD, actions_1000 },
-	{ MTIME_ANSAMPLE_PUT_PERIOD, actions_10000 }
-};
-
 /* ----------------------- Local function prototypes ----------------------- */
 /* ---------------------------- Local functions ---------------------------- */
 /* ---------------------------- Global functions --------------------------- */
+
+void buzzerInit(){
+
+    // Configure Buzzer Pin
+    gpioWrite( BUZZER_PIN, false);
+    gpioConfig( BUZZER_PIN, GPIO_OUTPUT );
+}
+
+void buzzerSet(bool_t on){
+    gpioWrite( BUZZER_PIN, on);
+}
+
+bool_t buzzerGet(){
+    return gpioRead(BUZZER_PIN);
+}
+
 /* ------------------------------ End of file ------------------------------ */
-
-
-
-
-

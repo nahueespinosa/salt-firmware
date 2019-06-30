@@ -1,30 +1,24 @@
 /**
- *  \file       anSampler.h
- *  \brief      Specification of analog signal sampler.
+ *  \file       ain.h
+ *  \brief      Specification of Analog Inputs adquisition and filtering.
  */
 
 /* -------------------------- Development history -------------------------- */
 /*
- *  2018.05.14  LeFr  v1.0.00  Initial version
+ *  2018.05.17  DaBa  v1.0.00  Initial version
  */
 
 /* -------------------------------- Authors -------------------------------- */
 /*
- *  LeFr  Leandro Francucci lf@vortexmakes.com
+ *  DaBa  Dario Bali�a       db@vortexmakes.com
  */
 
 /* --------------------------------- Notes --------------------------------- */
 /* --------------------------------- Module -------------------------------- */
-#ifndef __ANSAMPLER_H__
-#define __ANSAMPLER_H__
+#ifndef __AIN_H__
+#define __AIN_H__
 
 /* ----------------------------- Include files ----------------------------- */
-#include "CirBuffer.h"
-#include "epoch.h"
-#include "anIn.h"
-#include "mTimeCfg.h"
-#include "publisher.h"
-
 /* ---------------------- External C language linkage ---------------------- */
 #ifdef __cplusplus
 extern "C" {
@@ -32,28 +26,22 @@ extern "C" {
 
 /* --------------------------------- Macros -------------------------------- */
 /* -------------------------------- Constants ------------------------------ */
-#define AN_SAMPLING_RATE_SEC (MTIME_ANSAMPLE_PUT_PERIOD * MTIME_TIME_TICK)/1000
-#define MAX_AN_NUM_SAMPLES   (32 << NUM_PUBTIME_STEPS)
-#define NUM_AN_SIGNALS       NUM_ANIN_SIGNALS
-
-/* ................................ Signals ................................ */
-/* ........................ Declares active object ......................... */
 /* ------------------------------- Data types ------------------------------ */
-typedef unsigned short SampleValue;
-typedef SampleValue AnSignalValue[MAX_AN_NUM_SAMPLES];
-typedef struct AnSampleSet AnSampleSet;
-struct AnSampleSet
+typedef enum anInSignalId
 {
-    Epoch timeStamp;    /** Updated every sampling time */
-    AnSignalValue anSignal[NUM_AN_SIGNALS];
-};
+    anIn0, anIn1, anIn2, anIn3,
+    NUM_ANIN_SIGNALS
+}anInSignalId;
+
+typedef unsigned short adc_t;
 
 /* -------------------------- External variables --------------------------- */
 /* -------------------------- Function prototypes -------------------------- */
-int anSampler_init(void);
-int anSampler_put(void);
-int anSampler_getSet(AnSampleSet *set, int nSamples);
-int anSampler_getNumSamples(void);
+void anIn_init(void);
+
+void anIn_captureAndFilter(void);
+
+adc_t anIn_get(int channel);
 
 /* -------------------- External C language linkage end -------------------- */
 #ifdef __cplusplus

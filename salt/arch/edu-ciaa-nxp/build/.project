@@ -70,9 +70,19 @@
 			<locationURI>PARENT-4-PROJECT_LOC/third-party/MQTT-C/src/mqtt_pal.c</locationURI>
 		</link>
 		<link>
+			<name>src/bsp/anin.c</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/bsp/anIn.c</locationURI>
+		</link>
+		<link>
 			<name>src/bsp/as1116.c</name>
 			<type>1</type>
 			<locationURI>PARENT-1-PROJECT_LOC/bsp/as1116.c</locationURI>
+		</link>
+		<link>
+			<name>src/bsp/buzzer.c</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/bsp/buzzer.c</locationURI>
 		</link>
 		<link>
 			<name>src/bsp/lpc_board</name>
@@ -85,9 +95,24 @@
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
+			<name>src/bsp/onSwitch.c</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/bsp/onSwitch.c</locationURI>
+		</link>
+		<link>
+			<name>src/bsp/relay.c</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/bsp/relay.c</locationURI>
+		</link>
+		<link>
 			<name>src/bsp/sapi</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
+			<name>src/dimba/emaFilter</name>
+			<type>2</type>
+			<locationURI>PARENT-4-PROJECT_LOC/dimba/emaFilter</locationURI>
 		</link>
 		<link>
 			<name>src/dimba/epoch</name>
@@ -195,6 +220,16 @@
 			<locationURI>PARENT-4-PROJECT_LOC/third-party/rkh/source/trc/src/rkhtrc_stream.c</locationURI>
 		</link>
 		<link>
+			<name>src/salt/anIn</name>
+			<type>2</type>
+			<locationURI>PARENT-4-PROJECT_LOC/salt/anIn</locationURI>
+		</link>
+		<link>
+			<name>src/salt/ihm</name>
+			<type>2</type>
+			<locationURI>PARENT-4-PROJECT_LOC/salt/ihm</locationURI>
+		</link>
+		<link>
 			<name>src/salt/ledPanel</name>
 			<type>2</type>
 			<locationURI>PARENT-4-PROJECT_LOC/salt/ledPanel</locationURI>
@@ -203,6 +238,11 @@
 			<name>src/salt/main.c</name>
 			<type>1</type>
 			<locationURI>PARENT-4-PROJECT_LOC/salt/main.c</locationURI>
+		</link>
+		<link>
+			<name>src/salt/relayControl</name>
+			<type>2</type>
+			<locationURI>PARENT-4-PROJECT_LOC/salt/relayControl</locationURI>
 		</link>
 		<link>
 			<name>src/ssp/ssp.c</name>

@@ -32,7 +32,7 @@
 #include "CirBuffer.h"
 #include "mTime.h"
 #include "din.h"
-#include "anin.h"
+#include "anIn.h"
 #include "anSampler.h"
 #include "ioChgDet.h"
 #include "epoch.h"

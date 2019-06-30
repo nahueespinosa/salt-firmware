@@ -1,24 +1,27 @@
 /**
- *  \file       ain.h
- *  \brief      Specification of Analog Inputs adquisition and filtering.
+ *  \file       onSwitch.h
+ *  \brief      on switch driver.
  */
+
 
 /* -------------------------- Development history -------------------------- */
 /*
- *  2018.05.17  DaBa  v1.0.00  Initial version
+ *  2019.06.17  IMD  v1.0.00  Initial version
  */
 
 /* -------------------------------- Authors -------------------------------- */
 /*
- *  DaBa  Dario Baliña       db@vortexmakes.com
+ *  IMD  Ivan Mariano Di Vito divitoivan@gmail.com.com
  */
 
 /* --------------------------------- Notes --------------------------------- */
 /* --------------------------------- Module -------------------------------- */
-#ifndef __AIN_H__
-#define __AIN_H__
+#ifndef __ON_SWITCH_H__
+#define __ON_SWITCH_H__
 
 /* ----------------------------- Include files ----------------------------- */
+#include "sapi.h"
+
 /* ---------------------- External C language linkage ---------------------- */
 #ifdef __cplusplus
 extern "C" {
@@ -27,23 +30,13 @@ extern "C" {
 /* --------------------------------- Macros -------------------------------- */
 /* -------------------------------- Constants ------------------------------ */
 /* ------------------------------- Data types ------------------------------ */
-typedef enum anInSignalId
-{
-    anIn0, anIn1, anIn2, anIn3,
-    NUM_ANIN_SIGNALS
-}anInSignalId;
-
-typedef unsigned short adc_t;
+typedef void (* onSwitchCb_t)(bool_t activated);
 
 /* -------------------------- External variables --------------------------- */
 /* -------------------------- Function prototypes -------------------------- */
-void anIn_init(void);
-
-void anIn_captureAndFilter(void);
-
-adc_t anIn_get(int channel);
-
-void anIn_update(void);
+void onSwitchInit();
+bool_t onSwitchGet();
+void onSwitchSetIntCb( onSwitchCb_t cb );
 
 /* -------------------- External C language linkage end -------------------- */
 #ifdef __cplusplus

@@ -17,7 +17,7 @@
 /* ----------------------------- Include files ----------------------------- */
 #include "rkh.h"
 #include "sapi.h"
-#include "anin.h"
+#include "anIn.h"
 #include "mTimeCfg.h"
 #include "emaFilter.h"
 #include "anSampler.h"

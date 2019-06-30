@@ -12,7 +12,7 @@
 
 /* -------------------------------- Authors -------------------------------- */
 /*
- *  DaBa  Dario Baliña       db@vortexmakes.com
+ *  DaBa  Dario Baliï¿½a       db@vortexmakes.com
  *  LeFr  Leandro Francucci  lf@vortexmakes.com
  */
 
@@ -32,7 +32,7 @@
 #include "conmgr.h"
 #include "modpwr.h"
 #include "din.h"
-#include "anin.h"
+#include "anIn.h"
 #include "ioChgDet.h"
 #include "anSampler.h"
 #include "mTime.h"

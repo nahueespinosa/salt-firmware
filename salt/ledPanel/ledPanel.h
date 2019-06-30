@@ -102,7 +102,7 @@ static const rui8_t digitCodeMap[] = {
         0b00000000, // 36  ' '  BLANK
         0b00000001, // 37  '-'  DASH
         0b10000000, // 38  '.'  PERIOD
-        0b01100011, // 39 '*'  DEGREE ..
+        0b01100011, // 39  '*'  DEGREE ..
 };
 
 extern const rui8_t * const numeralCodes;

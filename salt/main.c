@@ -22,6 +22,10 @@
 #include <stdio.h>
 #include "sapi.h"
 #include "ledPanel.h"
+#include "relay.h"
+#include "anIn.h"
+#include "buzzer.h"
+#include "onSwitch.h"
 
 /* ----------------------------- Local macros ------------------------------ */
 /* ------------------------------- Constants ------------------------------- */
@@ -30,6 +34,11 @@
 /* ---------------------------- Local variables ---------------------------- */
 /* ----------------------- Local function prototypes ----------------------- */
 /* ---------------------------- Local functions ---------------------------- */
+
+
+static void onSwitchCb(bool_t activated){
+    buzzerSet(activated);
+}
 
 static void
 saltBoardConfig(void)
@@ -67,43 +76,50 @@ saltBoardConfig(void)
     //i2cConfig(I2C0, 100000);
     //uartConfig(UART_232, 19200);
 
-    gpioConfig( DI7, GPIO_INPUT ); // DI7 CIAA = ISP EDU-CIAA
+    //gpioConfig( DI7, GPIO_INPUT ); // DI7 CIAA = ISP EDU-CIAA
     gpioConfig( RS232_TXD, GPIO_INPUT );
     gpioConfig( RS232_RXD, GPIO_INPUT );
     gpioConfig( CAN_RD, GPIO_INPUT );
     gpioConfig( CAN_TD, GPIO_INPUT );
-    gpioConfig( T_COL1, GPIO_INPUT );
-    gpioConfig( T_FIL0, GPIO_INPUT );
-    gpioConfig( T_FIL3, GPIO_INPUT );
-    gpioConfig( T_FIL2, GPIO_INPUT );
-    gpioConfig( T_COL0, GPIO_INPUT );
-    gpioConfig( T_FIL1, GPIO_INPUT );
-    gpioConfig( T_COL2, GPIO_INPUT );
+    //gpioConfig( T_COL1, GPIO_INPUT );
+    //gpioConfig( T_FIL0, GPIO_INPUT );
+    //gpioConfig( T_FIL3, GPIO_INPUT );
+    //gpioConfig( T_FIL2, GPIO_INPUT );
+    //gpioConfig( T_COL0, GPIO_INPUT );
+    //gpioConfig( T_FIL1, GPIO_INPUT );
+    //gpioConfig( T_COL2, GPIO_INPUT );
 
     gpioConfig( ENET_RXD0, GPIO_INPUT );
     gpioConfig( LCDEN, GPIO_INPUT );
     gpioConfig( GPIO0, GPIO_INPUT );
     gpioConfig( GPIO2, GPIO_INPUT );
-    gpioConfig( GPIO4, GPIO_INPUT );
+    //gpioConfig( GPIO4, GPIO_INPUT );
     //gpioConfig( GPIO6, GPIO_INPUT );
-    gpioConfig( GPIO8, GPIO_INPUT );
-    gpioConfig( GPIO7, GPIO_INPUT );
-    gpioConfig( GPIO5, GPIO_INPUT );
-    gpioConfig( GPIO3, GPIO_INPUT );
-    gpioConfig( GPIO1, GPIO_INPUT );
-    gpioConfig( LCD1, GPIO_INPUT );
-    gpioConfig( LCD2, GPIO_INPUT );
-    gpioConfig( LCD3, GPIO_INPUT );
-    gpioConfig( LCDRS, GPIO_INPUT );
-    gpioConfig( LCD4, GPIO_INPUT );
-    gpioConfig( ENET_TXD1, GPIO_INPUT );
-    gpioConfig( ENET_TXD0, GPIO_INPUT );
-    gpioConfig( ENET_MDIO, GPIO_INPUT );
+    //gpioConfig( GPIO8, GPIO_INPUT );
+    //gpioConfig( GPIO7, GPIO_INPUT );
+    //gpioConfig( GPIO5, GPIO_INPUT );
+    //gpioConfig( GPIO3, GPIO_INPUT );
+    //gpioConfig( GPIO1, GPIO_INPUT );
+    //gpioConfig( LCD1, GPIO_INPUT );
+    //gpioConfig( LCD2, GPIO_INPUT );
+    //gpioConfig( LCD3, GPIO_INPUT );
+    //gpioConfig( LCDRS, GPIO_INPUT );
+    //gpioConfig( LCD4, GPIO_INPUT );
+    //gpioConfig( ENET_TXD1, GPIO_INPUT );
+    //gpioConfig( ENET_TXD0, GPIO_INPUT );
+    //gpioConfig( ENET_MDIO, GPIO_INPUT );
     gpioConfig( ENET_CRS_DV, GPIO_INPUT );
     gpioConfig( ENET_MDC, GPIO_INPUT );
     gpioConfig( ENET_TXEN, GPIO_INPUT );
     gpioConfig( ENET_RXD1, GPIO_INPUT );
 
+    relayInit();
+    ledPanelInit();
+    anInInit();
+    buzzerInit();
+    onSwitchInit();
+
+    onSwitchSetIntCb(onSwitchCb);
 }
 
 /* ---------------------------- Global functions --------------------------- */
@@ -111,45 +127,19 @@ saltBoardConfig(void)
 int
 main(int argc, char *argv[])
 {
-    // config openocd
-    // D:\programas_instalados\openocd\bin\openocd.exe
-    // -f D:\documentos\ingenieria\uba\tesis\salt-firmware\ftdi_lpc4337.cfg
-    // D:\documentos\ingenieria\uba\tesis\ciaa\ide\cygwin\usr\arm-none-eabi\bin\arm-none-eabi-gdb.exe
-    // set mem inaccessible-by-default off
 
     saltBoardConfig();
-    ledPanelInit();
 
-    ledPanelTestSalt();
+    while(1){
 
-    LedPanelCfg testConfig;
-    testConfig.pointPosition = 2;
-    testConfig.digit0 = 1,
-    testConfig.digit1 = 2;
-    testConfig.digit2 = 3;
-    testConfig.digit3 = 4;
-    testConfig.ledOn = GREEN;
-    testConfig.ledCt = YELLOW;
-    testConfig.ledFe = RED;
-    testConfig.ledGps = CYAN;
-    testConfig.ledRemoteOp = BLUE;
-    testConfig.ledIsolated = MAGENTA;
-
-    ledPanelSetCfg(&testConfig);
-
-    while(1) {
-        /* Prendo el led azul */
         gpioWrite( LED1, ON );
-
         delay(500);
 
-        /* Apago el led azul */
         gpioWrite( LED1, OFF );
-
         delay(500);
     }
-
     return 0;
 }
+
 
 /* ------------------------------ End of file ------------------------------ */

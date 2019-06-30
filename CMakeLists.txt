@@ -46,6 +46,11 @@ set(file_remove_list
         "${CMAKE_HOME_DIRECTORY}/dimba/arch/win/*.c"
         "${CMAKE_HOME_DIRECTORY}/dimba/arch/win/*.cpp"
 
+        "${CMAKE_HOME_DIRECTORY}/dimba/anIn/*.h"
+        "${CMAKE_HOME_DIRECTORY}/dimba/anIn/*.c"
+        "${CMAKE_HOME_DIRECTORY}/dimba/anIn/*.cpp"
+
+
         "${CMAKE_HOME_DIRECTORY}/third-party/MQTT-C/examples/*.h"
         "${CMAKE_HOME_DIRECTORY}/third-party/MQTT-C/examples/*.c"
         "${CMAKE_HOME_DIRECTORY}/third-party/MQTT-C/examples/*.cpp"
