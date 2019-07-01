@@ -100,6 +100,11 @@
 			<locationURI>PARENT-1-PROJECT_LOC/bsp/onSwitch.c</locationURI>
 		</link>
 		<link>
+			<name>src/bsp/pulseCounter.c</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/bsp/pulseCounter.c</locationURI>
+		</link>
+		<link>
 			<name>src/bsp/relay.c</name>
 			<type>1</type>
 			<locationURI>PARENT-1-PROJECT_LOC/bsp/relay.c</locationURI>
@@ -238,6 +243,11 @@
 			<name>src/salt/main.c</name>
 			<type>1</type>
 			<locationURI>PARENT-4-PROJECT_LOC/salt/main.c</locationURI>
+		</link>
+		<link>
+			<name>src/salt/pulseCounter</name>
+			<type>2</type>
+			<locationURI>PARENT-4-PROJECT_LOC/salt/pulseCounter</locationURI>
 		</link>
 		<link>
 			<name>src/salt/relayControl</name>

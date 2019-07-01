@@ -39,7 +39,10 @@ static onSwitchCb_t onSwitchCb = NULL;
 /* ---------------------------- Local functions ---------------------------- */
 /* ---------------------------- Global functions --------------------------- */
 
-void onSwitchInit(){
+void onSwitchInit(onSwitchCb_t cb){
+
+    /* Set Callback */
+    onSwitchSetIntCb(cb);
 
     // Configure On Switch Pin
     gpioConfig( SWITCH_DIGITAL_PIN, GPIO_INPUT );
@@ -51,6 +54,7 @@ void onSwitchInit(){
     Chip_PININT_SetPinModeEdge(LPC_GPIO_PIN_INT, PININT_SWITCH);
     Chip_PININT_EnableIntLow(LPC_GPIO_PIN_INT, PININT_SWITCH);
     Chip_PININT_EnableIntHigh(LPC_GPIO_PIN_INT, PININT_SWITCH);
+
 
     /* Enable interrupt in the NVIC */
     NVIC_ClearPendingIRQ(PININT_SWITCH_NVIC_NAME);

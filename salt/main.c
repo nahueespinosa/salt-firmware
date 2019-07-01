@@ -26,9 +26,13 @@
 #include "anIn.h"
 #include "buzzer.h"
 #include "onSwitch.h"
+#include "pulseCounter.h"
 
 /* ----------------------------- Local macros ------------------------------ */
 /* ------------------------------- Constants ------------------------------- */
+
+#define PULSE_COUNTER_THR 5
+
 /* ---------------------------- Local data types --------------------------- */
 /* ---------------------------- Global variables --------------------------- */
 /* ---------------------------- Local variables ---------------------------- */
@@ -79,8 +83,8 @@ saltBoardConfig(void)
     //gpioConfig( DI7, GPIO_INPUT ); // DI7 CIAA = ISP EDU-CIAA
     gpioConfig( RS232_TXD, GPIO_INPUT );
     gpioConfig( RS232_RXD, GPIO_INPUT );
-    gpioConfig( CAN_RD, GPIO_INPUT );
-    gpioConfig( CAN_TD, GPIO_INPUT );
+    //gpioConfig( CAN_RD, GPIO_INPUT );
+    //gpioConfig( CAN_TD, GPIO_INPUT );
     //gpioConfig( T_COL1, GPIO_INPUT );
     //gpioConfig( T_FIL0, GPIO_INPUT );
     //gpioConfig( T_FIL3, GPIO_INPUT );
@@ -117,9 +121,8 @@ saltBoardConfig(void)
     ledPanelInit();
     anInInit();
     buzzerInit();
-    onSwitchInit();
-
-    onSwitchSetIntCb(onSwitchCb);
+    onSwitchInit(onSwitchCb);
+    pulseCounterInit(PULSE_COUNTER_THR);
 }
 
 /* ---------------------------- Global functions --------------------------- */
@@ -130,13 +133,18 @@ main(int argc, char *argv[])
 
     saltBoardConfig();
 
+    pulseCount_t pulseCount;
+
     while(1){
 
         gpioWrite( LED1, ON );
-        delay(500);
+        delay(2000);
 
         gpioWrite( LED1, OFF );
-        delay(500);
+        delay(2000);
+
+        bool_t result = pulseCounterGet(&pulseCount);
+
     }
     return 0;
 }
