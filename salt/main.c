@@ -27,6 +27,8 @@
 #include "buzzer.h"
 #include "onSwitch.h"
 #include "pulseCounter.h"
+#include "serial.h"
+#include "sim808.h"
 
 /* ----------------------------- Local macros ------------------------------ */
 /* ------------------------------- Constants ------------------------------- */
@@ -41,7 +43,19 @@
 
 
 static void onSwitchCb(bool_t activated){
-    buzzerSet(activated);
+    //buzzerSet(activated);
+}
+
+static void simACb(unsigned char c){
+    int i = 0;
+}
+
+static void simBCb(unsigned char c){
+    int i = 1;
+}
+
+static void telocCb(unsigned char c){
+    int i = 2;
 }
 
 static void
@@ -81,8 +95,8 @@ saltBoardConfig(void)
     //uartConfig(UART_232, 19200);
 
     //gpioConfig( DI7, GPIO_INPUT ); // DI7 CIAA = ISP EDU-CIAA
-    gpioConfig( RS232_TXD, GPIO_INPUT );
-    gpioConfig( RS232_RXD, GPIO_INPUT );
+    //gpioConfig( RS232_TXD, GPIO_INPUT );
+    //gpioConfig( RS232_RXD, GPIO_INPUT );
     //gpioConfig( CAN_RD, GPIO_INPUT );
     //gpioConfig( CAN_TD, GPIO_INPUT );
     //gpioConfig( T_COL1, GPIO_INPUT );
@@ -93,10 +107,10 @@ saltBoardConfig(void)
     //gpioConfig( T_FIL1, GPIO_INPUT );
     //gpioConfig( T_COL2, GPIO_INPUT );
 
-    gpioConfig( ENET_RXD0, GPIO_INPUT );
-    gpioConfig( LCDEN, GPIO_INPUT );
-    gpioConfig( GPIO0, GPIO_INPUT );
-    gpioConfig( GPIO2, GPIO_INPUT );
+    //gpioConfig( ENET_RXD0, GPIO_INPUT );
+    //gpioConfig( LCDEN, GPIO_INPUT );
+    //gpioConfig( GPIO0, GPIO_INPUT );
+    //gpioConfig( GPIO2, GPIO_INPUT );
     //gpioConfig( GPIO4, GPIO_INPUT );
     //gpioConfig( GPIO6, GPIO_INPUT );
     //gpioConfig( GPIO8, GPIO_INPUT );
@@ -112,10 +126,10 @@ saltBoardConfig(void)
     //gpioConfig( ENET_TXD1, GPIO_INPUT );
     //gpioConfig( ENET_TXD0, GPIO_INPUT );
     //gpioConfig( ENET_MDIO, GPIO_INPUT );
-    gpioConfig( ENET_CRS_DV, GPIO_INPUT );
-    gpioConfig( ENET_MDC, GPIO_INPUT );
-    gpioConfig( ENET_TXEN, GPIO_INPUT );
-    gpioConfig( ENET_RXD1, GPIO_INPUT );
+    //gpioConfig( ENET_CRS_DV, GPIO_INPUT );
+    //gpioConfig( ENET_MDC, GPIO_INPUT );
+    //gpioConfig( ENET_TXEN, GPIO_INPUT );
+    //gpioConfig( ENET_RXD1, GPIO_INPUT );
 
     relayInit();
     ledPanelInit();
@@ -123,6 +137,12 @@ saltBoardConfig(void)
     buzzerInit();
     onSwitchInit(onSwitchCb);
     pulseCounterInit(PULSE_COUNTER_THR);
+    sim808Init(SIM_808_A);
+    serialSetIntCb(UART_SIM_808_A, simACb);
+    sim808Init(SIM_808_B);
+    serialSetIntCb(UART_SIM_808_B, simBCb);
+    serialInit(UART_TELOC_1500);
+    serialSetIntCb(UART_TELOC_1500, telocCb);
 }
 
 /* ---------------------------- Global functions --------------------------- */
@@ -133,17 +153,14 @@ main(int argc, char *argv[])
 
     saltBoardConfig();
 
-    pulseCount_t pulseCount;
 
     while(1){
 
         gpioWrite( LED1, ON );
-        delay(2000);
+        delay(1000);
 
         gpioWrite( LED1, OFF );
-        delay(2000);
-
-        bool_t result = pulseCounterGet(&pulseCount);
+        delay(1000);
 
     }
     return 0;

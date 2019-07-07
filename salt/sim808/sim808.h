@@ -1,24 +1,28 @@
 /**
- *  \file       relay.h
- *  \brief      Specification of Relay control.
+ *  \file       sim808.h
+ *  \brief      sim808 interface driver.
  */
+
 
 /* -------------------------- Development history -------------------------- */
 /*
- *  2019.06.27  IMD  v1.0.00  Initial version
+ *  2019.06.17  IMD  v1.0.00  Initial version
  */
 
 /* -------------------------------- Authors -------------------------------- */
 /*
- *  IMD  Ivan Mariano Di Vito       divitoivan@gmail.com
+ *  IMD  Ivan Mariano Di Vito divitoivan@gmail.com.com
  */
 
 /* --------------------------------- Notes --------------------------------- */
 /* --------------------------------- Module -------------------------------- */
-#ifndef __RELAY_H__
-#define __RELAY_H__
+#ifndef __SIM808_H__
+#define __SIM808_H__
 
 /* ----------------------------- Include files ----------------------------- */
+#include "sapi.h"
+#include "rkh.h"
+
 /* ---------------------- External C language linkage ---------------------- */
 #ifdef __cplusplus
 extern "C" {
@@ -27,26 +31,27 @@ extern "C" {
 /* --------------------------------- Macros -------------------------------- */
 /* -------------------------------- Constants ------------------------------ */
 /* ------------------------------- Data types ------------------------------ */
-typedef enum Relay
-{
-    feEn, feDis, feAct,
-    ctEn, ctDis, cdAct,
-    reg1, reg2, reg3, reg4,
-    NUM_RELAY
-}Relay_t;
 
+typedef enum{
+    SIM_808_A, SIM_808_B, SIM_808_COUNT
+} Sim808_t;
 
-typedef struct RelayPinConfig_t{
-    Relay_t relay;
-    gpioMap_t actPin;
-    gpioMap_t statusPin;
-} RelayPinConfig_t;
+typedef enum{
+    SIM_808_SLEEP, SIM_808_PWRKEY, SIM_808_VC, SIM_808_CONTROL_PIN_COUNT
+} Sim808ControlPin_t;
+
+typedef struct Sim808PinConfig_t{
+    Sim808_t sim808;
+    gpioMap_t sleepPin;
+    gpioMap_t pwrkeyPin;
+    gpioMap_t vcPin;
+} Sim808PinConfig_t;
+
 /* -------------------------- External variables --------------------------- */
 /* -------------------------- Function prototypes -------------------------- */
-void relayInit(void);
-void relaySetActivated(Relay_t relay, bool activated);
-bool relayGetActivated(Relay_t relay);
-bool relayReadStatus(Relay_t relay);
+void sim808Init(Sim808_t sim808);
+void sim808SetControlPin( Sim808_t sim808,  Sim808ControlPin_t controlPin, bool_t data);
+bool_t sim808GetControlPin( Sim808_t sim808,  Sim808ControlPin_t controlPin);
 
 /* -------------------- External C language linkage end -------------------- */
 #ifdef __cplusplus

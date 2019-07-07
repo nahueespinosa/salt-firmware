@@ -54,19 +54,19 @@ void relayInit(void){
 
 }
 
-void relaySetActivated(Relay relay, bool activated){
+void relaySetActivated(Relay_t relay, bool activated){
 
     gpioWrite(relayPinConfig[relay].actPin,activated);
 
 }
 
-bool relayGetActivated(Relay relay){
+bool relayGetActivated(Relay_t relay){
 
     return gpioRead(relayPinConfig[relay].actPin);
 
 }
 
-bool relayReadStatus(Relay relay){
+bool relayReadStatus(Relay_t relay){
 
     return !gpioRead(relayPinConfig[relay].statusPin);
 

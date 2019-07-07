@@ -115,6 +115,16 @@
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
+			<name>src/bsp/serial.c</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/bsp/serial.c</locationURI>
+		</link>
+		<link>
+			<name>src/bsp/sim808.c</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/bsp/sim808.c</locationURI>
+		</link>
+		<link>
 			<name>src/dimba/emaFilter</name>
 			<type>2</type>
 			<locationURI>PARENT-4-PROJECT_LOC/dimba/emaFilter</locationURI>
@@ -253,6 +263,16 @@
 			<name>src/salt/relayControl</name>
 			<type>2</type>
 			<locationURI>PARENT-4-PROJECT_LOC/salt/relayControl</locationURI>
+		</link>
+		<link>
+			<name>src/salt/serial</name>
+			<type>2</type>
+			<locationURI>PARENT-4-PROJECT_LOC/salt/serial</locationURI>
+		</link>
+		<link>
+			<name>src/salt/sim808</name>
+			<type>2</type>
+			<locationURI>PARENT-4-PROJECT_LOC/salt/sim808</locationURI>
 		</link>
 		<link>
 			<name>src/ssp/ssp.c</name>
