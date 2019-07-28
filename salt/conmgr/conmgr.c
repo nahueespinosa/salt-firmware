@@ -172,7 +172,7 @@ RKH_END_BRANCH_TABLE
 
 RKH_CREATE_BASIC_STATE(ConMgr_init, sendInit, NULL, &ConMgr_initialize, NULL);
 RKH_CREATE_TRANS_TABLE(ConMgr_init)
-    RKH_TRREG(evOk,         NULL, NULL, &ConMgr_pin),
+    RKH_TRREG(evOk,         NULL, NULL, &ConMgr_error),
 RKH_END_TRANS_TABLE
 
 RKH_CREATE_BASIC_STATE(ConMgr_error, errorReport, NULL, &ConMgr_initialize, NULL);

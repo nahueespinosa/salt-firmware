@@ -20,6 +20,7 @@
 
 #include <string.h>
 #include <stdio.h>
+#include "modpwr.h"
 #include "sapi.h"
 #include "ledPanel.h"
 #include "relay.h"
@@ -76,12 +77,15 @@ static void onSwitchCb(bool_t activated){
 }
 
 static void simACb(unsigned char c){
+    int i= 10;
     uartWriteByte(UART_USB,c);
-    simACmdParser(c);
+    //simACmdParser(c);
 }
 
 static void simBCb(unsigned char c){
-    int i = 1;
+    int i= 10;
+    uartWriteByte(UART_232,c);
+    uartWriteByte(UART_USB,c);
 }
 
 static void telocCb(unsigned char c){
@@ -96,23 +100,26 @@ saltConfig(void)
     /* Inicializacion SALT */
 
     bsp_init();
-    relayInit();
-    ledPanelInit();
-    anInInit();
-    buzzerInit();
-    onSwitchInit(onSwitchCb);
-    pulseCounterInit(PULSE_COUNTER_THR);
+    //relayInit();
+    //ledPanelInit();
+    //anInInit();
+    //buzzerInit();
+    //onSwitchInit(onSwitchCb);
+    //pulseCounterInit(PULSE_COUNTER_THR);
 
-    sim808Init(SIM_808_A);
-    serialSetIntCb(UART_SIM_808_A, simACb);
+    //sim808Init(SIM_808_A);
+    //serialSetIntCb(UART_SIM_808_A, simACb);
     sim808Init(SIM_808_B);
     serialSetIntCb(UART_SIM_808_B, simBCb);
-    serialInit(UART_TELOC_1500);
-    serialSetIntCb(UART_TELOC_1500, telocCb);
+    //serialInit(UART_TELOC_1500);
+    //serialSetIntCb(UART_TELOC_1500, telocCb);
+
+    //modPwr_init();
+    //modPwr_on();
 
     /* Conexion de modulos */
 
-    simACmdParser = ModCmd_init();
+    //simACmdParser = ModCmd_init();
 
 
 
@@ -199,6 +206,7 @@ main(int argc, char *argv[])
 
     saltConfig();
 
+    /*
     rkh_fwk_init();
 
     setupTraceFilters();
@@ -228,6 +236,7 @@ main(int argc, char *argv[])
 
     RKH_TRC_CLOSE();
 
+     */
     while(1){
 
         gpioWrite( LED1, ON );
@@ -235,6 +244,7 @@ main(int argc, char *argv[])
 
         gpioWrite( LED1, OFF );
         delay(500);
+        uartWriteByte(UART_USB,'a');
 
     }
     return 0;

@@ -79,14 +79,14 @@ bsp_init()
     gpioConfig( LED2, GPIO_OUTPUT );
     gpioConfig( LED3, GPIO_OUTPUT );
 
-    ModStatus_init();
-    ModStatus(0);
-    RegStatus(UnregisteredSt);
-    NetStatus_init();
-    NetStatus(DisconnectedSt);
+    //ModStatus_init();
+    //ModStatus(0);
+    //RegStatus(UnregisteredSt);
+    //NetStatus_init();
+    //NetStatus(DisconnectedSt);
 
-    modPwr_init();
-    rtime_init();
+    //modPwr_init();
+    //rtime_init();
 }
 
 void
