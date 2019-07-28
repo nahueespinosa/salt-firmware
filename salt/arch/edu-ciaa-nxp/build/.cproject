@@ -54,11 +54,6 @@
 									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../../third-party/LPCOpen/lpc_board_ciaa_edu_4337/inc&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../../third-party/sapi/inc&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../../third-party/ssp/src&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../conmgr&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../modcmd&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../modmgr&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../mqttProt&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../../third-party/rkh/source/fwk/inc&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../../third-party/rkh/source/mempool/inc&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../../third-party/rkh/source/queue/inc&quot;"/>
@@ -66,17 +61,26 @@
 									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../../third-party/rkh/source/sma/inc&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../../third-party/rkh/source/tmr/inc&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../../third-party/rkh/source/trc/inc&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../../dimba/rtime&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../../dimba/epoch&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../../dimba/emaFilter&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../../third-party/MQTT-C/include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../../third-party/jWrite/jWrite&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../../salt&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../../salt/ledPanel&quot;"/>
-									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../../salt/relayControl&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../../salt/anIn&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../../salt/conmgr&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../../salt/date&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../../salt/emaFilter&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../../salt/epoch&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../../salt/ihm&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../../salt/ledPanel&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../../salt/modcmd&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../../salt/modmgr&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../../salt/modpwr&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../../salt/mqttProt&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../../salt/mTime&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../../salt/parser/sim900&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../../salt/publisher&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../../salt/pulseCounter&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../../salt/relayControl&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../../salt/rtime&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../../salt/serial&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${ProjDirPath}/../../../../salt/sim808&quot;"/>
 								</option>

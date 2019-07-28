@@ -29,8 +29,26 @@
 #include "pulseCounter.h"
 #include "serial.h"
 #include "sim808.h"
+#include "signals.h"
+#include "bsp.h"
+
+#include "conmgr.h"
+#include "modmgr.h"
+#include "mqttProt.h"
+#include "publisher.h"
 
 /* ----------------------------- Local macros ------------------------------ */
+#define MQTTPROT_QSTO_SIZE  16
+#define CONMGR_QSTO_SIZE    8
+#define MODMGR_QSTO_SIZE    4
+
+#define SIZEOF_EP0STO       16
+#define SIZEOF_EP0_BLOCK    sizeof(RKH_EVT_T)
+#define SIZEOF_EP1STO       128
+#define SIZEOF_EP1_BLOCK    sizeof(ModCmd)
+#define SIZEOF_EP2STO       512
+#define SIZEOF_EP2_BLOCK    sizeof(ModMgrEvt)
+
 /* ------------------------------- Constants ------------------------------- */
 
 #define PULSE_COUNTER_THR 5
@@ -38,6 +56,17 @@
 /* ---------------------------- Local data types --------------------------- */
 /* ---------------------------- Global variables --------------------------- */
 /* ---------------------------- Local variables ---------------------------- */
+static RKH_EVT_T *MQTTProt_qsto[MQTTPROT_QSTO_SIZE];
+static RKH_EVT_T *ConMgr_qsto[CONMGR_QSTO_SIZE];
+static RKH_EVT_T *ModMgr_qsto[MODMGR_QSTO_SIZE];
+static rui8_t evPool0Sto[SIZEOF_EP0STO],
+        evPool1Sto[SIZEOF_EP1STO],
+        evPool2Sto[SIZEOF_EP2STO];
+
+static RKH_ROM_STATIC_EVENT(e_Open, evOpen);
+static MQTTProtCfg mqttProtCfg;
+static ModCmdRcvHandler simACmdParser;
+
 /* ----------------------- Local function prototypes ----------------------- */
 /* ---------------------------- Local functions ---------------------------- */
 
@@ -47,7 +76,8 @@ static void onSwitchCb(bool_t activated){
 }
 
 static void simACb(unsigned char c){
-    int i = 0;
+    uartWriteByte(UART_USB,c);
+    simACmdParser(c);
 }
 
 static void simBCb(unsigned char c){
@@ -59,35 +89,32 @@ static void telocCb(unsigned char c){
 }
 
 static void
-saltBoardConfig(void)
+saltConfig(void)
 {
-
-    /* Read clock settings and update SystemCoreClock variable */
-    SystemCoreClockUpdate();
-
-    Board_Init(); // From Board module (modules/lpc4337_m4/board)
-
-    /* Inicializar el conteo de Ticks con resolución de 1ms, sin tickHook */
-    tickConfig( 1, 0 );
-
-    /* Inicializar GPIOs */
-    gpioConfig( 0, GPIO_ENABLE );
-
-    /* Configuración de pines de entrada para Teclas de la EDU-CIAA-NXP */
-    gpioConfig( TEC1, GPIO_INPUT );
-    gpioConfig( TEC2, GPIO_INPUT );
-    gpioConfig( TEC3, GPIO_INPUT );
-    gpioConfig( TEC4, GPIO_INPUT );
-
-    /* Configuración de pines de salida para Leds de la EDU-CIAA-NXP */
-    gpioConfig( LEDR, GPIO_OUTPUT );
-    gpioConfig( LEDG, GPIO_OUTPUT );
-    gpioConfig( LEDB, GPIO_OUTPUT );
-    gpioConfig( LED1, GPIO_OUTPUT );
-    gpioConfig( LED2, GPIO_OUTPUT );
-    gpioConfig( LED3, GPIO_OUTPUT );
-
     /* Configuracion especifica SALT */
+
+    /* Inicializacion SALT */
+
+    bsp_init();
+    relayInit();
+    ledPanelInit();
+    anInInit();
+    buzzerInit();
+    onSwitchInit(onSwitchCb);
+    pulseCounterInit(PULSE_COUNTER_THR);
+
+    sim808Init(SIM_808_A);
+    serialSetIntCb(UART_SIM_808_A, simACb);
+    sim808Init(SIM_808_B);
+    serialSetIntCb(UART_SIM_808_B, simBCb);
+    serialInit(UART_TELOC_1500);
+    serialSetIntCb(UART_TELOC_1500, telocCb);
+
+    /* Conexion de modulos */
+
+    simACmdParser = ModCmd_init();
+
+
 
     //adcConfig(ADC_DISABLE);
     //dacConfig(DAC_DISABLE);
@@ -130,37 +157,84 @@ saltBoardConfig(void)
     //gpioConfig( ENET_MDC, GPIO_INPUT );
     //gpioConfig( ENET_TXEN, GPIO_INPUT );
     //gpioConfig( ENET_RXD1, GPIO_INPUT );
+}
 
-    relayInit();
-    ledPanelInit();
-    anInInit();
-    buzzerInit();
-    onSwitchInit(onSwitchCb);
-    pulseCounterInit(PULSE_COUNTER_THR);
-    sim808Init(SIM_808_A);
-    serialSetIntCb(UART_SIM_808_A, simACb);
-    sim808Init(SIM_808_B);
-    serialSetIntCb(UART_SIM_808_B, simBCb);
-    serialInit(UART_TELOC_1500);
-    serialSetIntCb(UART_TELOC_1500, telocCb);
+static void
+setupTraceFilters(void)
+{
+    RKH_FILTER_ON_GROUP(RKH_TRC_ALL_GROUPS);
+    RKH_FILTER_ON_EVENT(RKH_TRC_ALL_EVENTS);
+    //RKH_FILTER_OFF_EVENT(MODCMD_USR_TRACE);
+    RKH_FILTER_OFF_EVENT(MODCMD_USR_TRACE_OUT);
+    RKH_FILTER_OFF_EVENT(MODCMD_USR_TRACE_IN);
+    //RKH_FILTER_OFF_GROUP_ALL_EVENTS(RKH_TG_USR);
+    //RKH_FILTER_OFF_EVENT(RKH_TE_TMR_TOUT);
+    RKH_FILTER_OFF_EVENT(RKH_TE_SM_STATE);
+    //RKH_FILTER_OFF_EVENT(RKH_TE_SMA_FIFO);
+    //RKH_FILTER_OFF_EVENT(RKH_TE_SMA_LIFO);
+    //RKH_FILTER_OFF_EVENT(RKH_TE_SM_TS_STATE);
+    //RKH_FILTER_OFF_EVENT(RKH_TE_SM_DCH);
+    RKH_FILTER_OFF_SMA(modMgr);
+    RKH_FILTER_OFF_SMA(conMgr);
+    RKH_FILTER_OFF_SMA(mqttProt);
+    RKH_FILTER_OFF_ALL_SIGNALS();
 }
 
 /* ---------------------------- Global functions --------------------------- */
+void
+saltCfg_clientId(char *pid)
+{
+    strcpy(mqttProtCfg.clientId, pid);
+}
+
+void
+saltCfg_topic(char *t)
+{
+    sprintf(mqttProtCfg.topic, "/salt/%s", t);
+}
 
 int
 main(int argc, char *argv[])
 {
 
-    saltBoardConfig();
+    saltConfig();
 
+    rkh_fwk_init();
+
+    setupTraceFilters();
+
+    RKH_TRC_OPEN();
+
+    rkh_dynEvt_init();
+    rkh_fwk_registerEvtPool(evPool0Sto, SIZEOF_EP0STO, SIZEOF_EP0_BLOCK);
+    rkh_fwk_registerEvtPool(evPool1Sto, SIZEOF_EP1STO, SIZEOF_EP1_BLOCK);
+    rkh_fwk_registerEvtPool(evPool2Sto, SIZEOF_EP2STO, SIZEOF_EP2_BLOCK);
+
+    mqttProtCfg.publishTime = MAX_PUBLISH_TIME;
+    mqttProtCfg.syncTime = 4;
+    mqttProtCfg.keepAlive = 400;
+    mqttProtCfg.qos = 1;
+    strcpy(mqttProtCfg.clientId, "");
+    strcpy(mqttProtCfg.topic, "");
+    MQTTProt_ctor(&mqttProtCfg, publishDimba);
+
+    RKH_SMA_ACTIVATE(conMgr, ConMgr_qsto, CONMGR_QSTO_SIZE, 0, 0);
+    RKH_SMA_ACTIVATE(modMgr, ModMgr_qsto, MODMGR_QSTO_SIZE, 0, 0);
+    RKH_SMA_ACTIVATE(mqttProt, MQTTProt_qsto, MQTTPROT_QSTO_SIZE, 0, 0);
+
+    RKH_SMA_POST_FIFO(conMgr, &e_Open, 0);
+
+    rkh_fwk_enter();
+
+    RKH_TRC_CLOSE();
 
     while(1){
 
         gpioWrite( LED1, ON );
-        delay(1000);
+        delay(500);
 
         gpioWrite( LED1, OFF );
-        delay(1000);
+        delay(500);
 
     }
     return 0;

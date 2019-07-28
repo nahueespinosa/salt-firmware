@@ -1,84 +1,58 @@
 /**
- *  \file       bsp.h
- *  \brief      BSP for 80x86 OS win32
+ *  \file       emaFilter.h
+ *  \brief      Exponential Moving Average Filter routines.
  *
- *  \ingroup    bsp
  */
 
 /* -------------------------- Development history -------------------------- */
 /*
- *  2018.05.23  DaBa  v0.0.01  Initial version
- *  2019.06.17  IMD  v0.0.02  SALT changes
- *
+ *  2018.01.5  DaBa  v0.0.01  Initial version
  */
 
 /* -------------------------------- Authors -------------------------------- */
 /*
- *  LeFr  Leandro Francucci  lf@vortexmakes.com
- *  DaBa  Dario Bali�a       dariosb@gmail.com
- *  IMD  Ivan Mariano Di Vito divitoivan@gmail.com.com
+ *  DaBa  Dario Baliña       db@vortexmakes.com
  */
 
 /* --------------------------------- Module -------------------------------- */
-#ifndef __BSP_H__
-#define __BSP_H__
+#ifndef __EMAFILTER_H__
+#define __EMAFILTER_H__
 
 /* ----------------------------- Include files ----------------------------- */
-#include "rkh.h"
-
+#include "stdint.h"
 
 /* ---------------------- External C language linkage ---------------------- */
-
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /* --------------------------------- Macros -------------------------------- */
 /* -------------------------------- Constants ------------------------------ */
-
-/*
- * User trace events id�s
- */
-enum
-{
-    MODCMD_USR_TRACE = RKH_TE_USER,
-    MODCMD_USR_TRACE_OUT,
-    MODCMD_USR_TRACE_IN,
-};
-
-/*
- * Status Led�s 
- */
-typedef enum
-{
-    DisconnectedSt, 
-    UnregisteredSt = DisconnectedSt,
-
-    ConnectedSt,
-    RegisteredSt = ConnectedSt,
-} Status_t;
-
-/*
- * Status Led�s 
- */
-
 /* ------------------------------- Data types ------------------------------ */
 /* -------------------------- External variables --------------------------- */
 /* -------------------------- Function prototypes -------------------------- */
-void bsp_init();
 
-void bsp_keyParser(int c);
-void bsp_timeTick(void);
+/**
+ *  \brief
+ *  EMA Low Pass Filter
+ *
+ *  \param[in] new      New sample.
+ *  \param[in] last     Last filtered value.
+ *  \param[in] alph     Filtering hardness [1, 2, 4 ...],
+ *                      as higher is alpha, filtering is harder.
+ */
+int16_t emaFilter_LowPass(int16_t new, int16_t last, uint8_t alpha);
 
-void bsp_serial_open(int ch);
-void bsp_serial_close(int ch);
-void bsp_serial_puts(int ch, char *p);
-void bsp_serial_putnchar(int ch, unsigned char *p, ruint ndata);
-
-void bsp_regStatus(Status_t status);
-void bsp_netStatus(Status_t status);
-void bsp_modStatusToggle();
+/**
+ *  \brief
+ *  EMA High Pass Filter
+ *
+ *  \param[in] new      New sample.
+ *  \param[in] last     Last filtered value.
+ *  \param[in] alph     Filtering hardness [1, 2, 4 ...],
+ *                      as higher is alpha, filtering is harder.
+ */
+int16_t emaFilter_HighPass(int16_t new, int16_t last, uint8_t alpha);
 
 /* -------------------- External C language linkage end -------------------- */
 #ifdef __cplusplus

@@ -1,26 +1,26 @@
 /**
- *  \file       bsp.h
- *  \brief      BSP for 80x86 OS win32
- *
- *  \ingroup    bsp
+ *  \file       rtime.h
+ *  \brief      Specification of RTC abstraction.
  */
 
 /* -------------------------- Development history -------------------------- */
 /*
- *  2018.05.23  DaBa  v0.0.01  Initial version
+ *  2018.05.18  LeFr  v1.0.00  Initial version
  */
 
 /* -------------------------------- Authors -------------------------------- */
 /*
- *  LeFr  Leandro Francucci  lf@vortexmakes.com
- *  DaBa  Dario Bali�a       dariosb@gmail.com
+ *  LeFr  Leandro Francucci lf@vortexmakes.com
  */
 
+/* --------------------------------- Notes --------------------------------- */
 /* --------------------------------- Module -------------------------------- */
-#ifndef __BSP_H__
-#define __BSP_H__
+#ifndef __RTIME_H__
+#define __RTIME_H__
 
 /* ----------------------------- Include files ----------------------------- */
+#include "epoch.h"
+
 /* ---------------------- External C language linkage ---------------------- */
 #ifdef __cplusplus
 extern "C" {
@@ -28,56 +28,12 @@ extern "C" {
 
 /* --------------------------------- Macros -------------------------------- */
 /* -------------------------------- Constants ------------------------------ */
-/*
- * Serial Ports channels identifiers
- */
-enum
-{
-	GSM_PORT, 
-
-  	NUM_CHANNELS
-};
-
-/*
- * User trace events id�s
- */
-enum
-{
-    MODCMD_USR_TRACE = RKH_TE_USER,
-};
-
-/*
- * Status Led�s 
- */
-typedef enum
-{
-    DisconnectedSt, 
-    UnregisteredSt = DisconnectedSt,
-
-    ConnectedSt,
-    RegisteredSt = ConnectedSt,
-} Status_t;
-
-/*
- * Status Led�s 
- */
-
 /* ------------------------------- Data types ------------------------------ */
 /* -------------------------- External variables --------------------------- */
 /* -------------------------- Function prototypes -------------------------- */
-void bsp_init(int argc, char *argv[]);
-
-void bsp_keyParser(int c);
-void bsp_timeTick(void);
-
-void bsp_serial_open(int ch);
-void bsp_serial_close(int ch);
-void bsp_serial_puts(int ch, char *p);
-void bsp_serial_putnchar(int ch, unsigned char *p, ruint ndata);
-
-void bsp_regStatus(Status_t status);
-void bsp_netStatus(Status_t status);
-void bsp_modStatusToggle();
+void rtime_init(void);
+Time *rtime_get(void);
+void rtime_set(Time *pt);
 
 /* -------------------- External C language linkage end -------------------- */
 #ifdef __cplusplus
@@ -87,4 +43,4 @@ void bsp_modStatusToggle();
 /* ------------------------------ Module end ------------------------------- */
 #endif
 
-/* ------------------------------ File footer ------------------------------ */
+/* ------------------------------ End of file ------------------------------ */

@@ -183,7 +183,7 @@ void UART_SIM_808_A_IRQ_HANDLER(void){
     if (Chip_UART_ReadLineStatus(UART_SIM_808_A_LPC) & UART_LSR_RDR)
     {
         receivedByte = Chip_UART_ReadByte(UART_SIM_808_A_LPC);
-        if(uartTelocCb != NULL)
+        if(uartSimACb != NULL)
             (uartSimACb)(receivedByte);
     }
 }

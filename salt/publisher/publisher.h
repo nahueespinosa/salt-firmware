@@ -1,26 +1,26 @@
 /**
- *  \file       bsp.h
- *  \brief      BSP for 80x86 OS win32
- *
- *  \ingroup    bsp
+ *  \file       publisher.h
+ *  \brief      Specification JSON messaje formating and MQTT publish.
  */
 
 /* -------------------------- Development history -------------------------- */
 /*
- *  2018.05.23  DaBa  v0.0.01  Initial version
+ *  2018.06.22  DaBa  v1.0.00  Initial version
  */
 
 /* -------------------------------- Authors -------------------------------- */
 /*
- *  LeFr  Leandro Francucci  lf@vortexmakes.com
- *  DaBa  Dario Baliï¿½a       dariosb@gmail.com
+ *  DaBa Darío Baliña  db@vortexmakes.com
  */
 
+/* --------------------------------- Notes --------------------------------- */
 /* --------------------------------- Module -------------------------------- */
-#ifndef __BSP_H__
-#define __BSP_H__
+#ifndef __PUBLISHER_H__
+#define __PUBLISHER_H__
 
 /* ----------------------------- Include files ----------------------------- */
+#include "mqttProt.h"
+
 /* ---------------------- External C language linkage ---------------------- */
 #ifdef __cplusplus
 extern "C" {
@@ -28,56 +28,15 @@ extern "C" {
 
 /* --------------------------------- Macros -------------------------------- */
 /* -------------------------------- Constants ------------------------------ */
-/*
- * Serial Ports channels identifiers
- */
-enum
-{
-	GSM_PORT, 
-
-  	NUM_CHANNELS
-};
-
-/*
- * User trace events idï¿½s
- */
-enum
-{
-    MODCMD_USR_TRACE = RKH_TE_USER,
-};
-
-/*
- * Status Ledï¿½s 
- */
-typedef enum
-{
-    DisconnectedSt, 
-    UnregisteredSt = DisconnectedSt,
-
-    ConnectedSt,
-    RegisteredSt = ConnectedSt,
-} Status_t;
-
-/*
- * Status Ledï¿½s 
- */
+#define MAX_PUBLISH_TIME    64
+#define NUM_AN_SAMPLES_GET  ((MAX_PUBLISH_TIME / 10) + 4)
+#define NUM_DI_SAMPLES_GET  8
+#define NUM_PUBTIME_STEPS   3
 
 /* ------------------------------- Data types ------------------------------ */
 /* -------------------------- External variables --------------------------- */
 /* -------------------------- Function prototypes -------------------------- */
-void bsp_init(int argc, char *argv[]);
-
-void bsp_keyParser(int c);
-void bsp_timeTick(void);
-
-void bsp_serial_open(int ch);
-void bsp_serial_close(int ch);
-void bsp_serial_puts(int ch, char *p);
-void bsp_serial_putnchar(int ch, unsigned char *p, ruint ndata);
-
-void bsp_regStatus(Status_t status);
-void bsp_netStatus(Status_t status);
-void bsp_modStatusToggle();
+rui16_t publishDimba(AppData *appMsg);
 
 /* -------------------- External C language linkage end -------------------- */
 #ifdef __cplusplus
@@ -87,4 +46,4 @@ void bsp_modStatusToggle();
 /* ------------------------------ Module end ------------------------------- */
 #endif
 
-/* ------------------------------ File footer ------------------------------ */
+/* ------------------------------ End of file ------------------------------ */

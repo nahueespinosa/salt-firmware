@@ -1,85 +1,59 @@
 /**
- *  \file       bsp.h
- *  \brief      BSP for 80x86 OS win32
- *
- *  \ingroup    bsp
+ *  \file       mTimeCfg.h
+ * 	\bried      Main timer definitions.
  */
 
 /* -------------------------- Development history -------------------------- */
 /*
- *  2018.05.23  DaBa  v0.0.01  Initial version
- *  2019.06.17  IMD  v0.0.02  SALT changes
- *
+ *  2018.05.17  DaBa  v1.0.00  Initial version
  */
 
 /* -------------------------------- Authors -------------------------------- */
 /*
- *  LeFr  Leandro Francucci  lf@vortexmakes.com
- *  DaBa  Dario Bali�a       dariosb@gmail.com
- *  IMD  Ivan Mariano Di Vito divitoivan@gmail.com.com
+ *  DaBa  Dario Baliña       db@vortexmakes.com
  */
 
+/* --------------------------------- Notes --------------------------------- */
 /* --------------------------------- Module -------------------------------- */
-#ifndef __BSP_H__
-#define __BSP_H__
+#ifndef __MTIMECFG_H__
+#define __MTIMECFG_H__
 
 /* ----------------------------- Include files ----------------------------- */
 #include "rkh.h"
 
-
 /* ---------------------- External C language linkage ---------------------- */
-
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /* --------------------------------- Macros -------------------------------- */
 /* -------------------------------- Constants ------------------------------ */
+/*
+ * 	Here define the time of interrupt in us
+ */
+#define MTIME_TIME_TICK			RKH_TICK_RATE_MS   /* Expressed in msec */
 
 /*
- * User trace events id�s
+ * 	Number of slots in table 'timerChain'declared in 'mTimeTbl.h' and
+ *  user defined in 'mTimeTbl.c'.
  */
-enum
-{
-    MODCMD_USR_TRACE = RKH_TE_USER,
-    MODCMD_USR_TRACE_OUT,
-    MODCMD_USR_TRACE_IN,
-};
+#define NUM_TIMER_DIVISORS		3
 
 /*
- * Status Led�s 
+ * Scaled time slots constants
  */
-typedef enum
-{
-    DisconnectedSt, 
-    UnregisteredSt = DisconnectedSt,
+#define MTIME_100_MS			(100/MTIME_TIME_TICK)
+#define MTIME_1_SEG             (1000/MTIME_TIME_TICK)
+#define MTIME_10_SEG            (10000/MTIME_TIME_TICK)
 
-    ConnectedSt,
-    RegisteredSt = ConnectedSt,
-} Status_t;
-
-/*
- * Status Led�s 
- */
+#define MTIME_MODPWR_BASE                   MTIME_100_MS
+#define MTIME_EPOCH_UPD_PERIOD			    MTIME_100_MS
+#define MTIME_ANIN_READANDFILTER_PERIOD     MTIME_1_SEG
+#define MTIME_ANSAMPLE_PUT_PERIOD           MTIME_10_SEG
 
 /* ------------------------------- Data types ------------------------------ */
 /* -------------------------- External variables --------------------------- */
 /* -------------------------- Function prototypes -------------------------- */
-void bsp_init();
-
-void bsp_keyParser(int c);
-void bsp_timeTick(void);
-
-void bsp_serial_open(int ch);
-void bsp_serial_close(int ch);
-void bsp_serial_puts(int ch, char *p);
-void bsp_serial_putnchar(int ch, unsigned char *p, ruint ndata);
-
-void bsp_regStatus(Status_t status);
-void bsp_netStatus(Status_t status);
-void bsp_modStatusToggle();
-
 /* -------------------- External C language linkage end -------------------- */
 #ifdef __cplusplus
 }
@@ -88,4 +62,8 @@ void bsp_modStatusToggle();
 /* ------------------------------ Module end ------------------------------- */
 #endif
 
-/* ------------------------------ File footer ------------------------------ */
+/* ------------------------------ End of file ------------------------------ */
+/*
+ * 	mTimeCfg.h
+ */
+

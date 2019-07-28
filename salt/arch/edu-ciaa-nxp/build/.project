@@ -35,11 +35,6 @@
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
-			<name>src/dimba</name>
-			<type>2</type>
-			<locationURI>virtual:/virtual</locationURI>
-		</link>
-		<link>
 			<name>src/jWrite</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
@@ -80,9 +75,24 @@
 			<locationURI>PARENT-1-PROJECT_LOC/bsp/as1116.c</locationURI>
 		</link>
 		<link>
+			<name>src/bsp/assert.c</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/bsp/assert.c</locationURI>
+		</link>
+		<link>
+			<name>src/bsp/bsp.c</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/bsp/bsp.c</locationURI>
+		</link>
+		<link>
 			<name>src/bsp/buzzer.c</name>
 			<type>1</type>
 			<locationURI>PARENT-1-PROJECT_LOC/bsp/buzzer.c</locationURI>
+		</link>
+		<link>
+			<name>src/bsp/hook.c</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/bsp/hook.c</locationURI>
 		</link>
 		<link>
 			<name>src/bsp/lpc_board</name>
@@ -110,6 +120,11 @@
 			<locationURI>PARENT-1-PROJECT_LOC/bsp/relay.c</locationURI>
 		</link>
 		<link>
+			<name>src/bsp/rtime.c</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/bsp/rtime.c</locationURI>
+		</link>
+		<link>
 			<name>src/bsp/sapi</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
@@ -125,19 +140,9 @@
 			<locationURI>PARENT-1-PROJECT_LOC/bsp/sim808.c</locationURI>
 		</link>
 		<link>
-			<name>src/dimba/emaFilter</name>
-			<type>2</type>
-			<locationURI>PARENT-4-PROJECT_LOC/dimba/emaFilter</locationURI>
-		</link>
-		<link>
-			<name>src/dimba/epoch</name>
-			<type>2</type>
-			<locationURI>virtual:/virtual</locationURI>
-		</link>
-		<link>
-			<name>src/dimba/rtime</name>
-			<type>2</type>
-			<locationURI>PARENT-4-PROJECT_LOC/dimba/rtime</locationURI>
+			<name>src/bsp/trace_io.c</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/bsp/trace_io.c</locationURI>
 		</link>
 		<link>
 			<name>src/jWrite/jWrite.c</name>
@@ -240,6 +245,26 @@
 			<locationURI>PARENT-4-PROJECT_LOC/salt/anIn</locationURI>
 		</link>
 		<link>
+			<name>src/salt/conmgr</name>
+			<type>2</type>
+			<locationURI>PARENT-4-PROJECT_LOC/salt/conmgr</locationURI>
+		</link>
+		<link>
+			<name>src/salt/date</name>
+			<type>2</type>
+			<locationURI>PARENT-4-PROJECT_LOC/salt/date</locationURI>
+		</link>
+		<link>
+			<name>src/salt/emaFilter</name>
+			<type>2</type>
+			<locationURI>PARENT-4-PROJECT_LOC/salt/emaFilter</locationURI>
+		</link>
+		<link>
+			<name>src/salt/epoch</name>
+			<type>2</type>
+			<locationURI>PARENT-4-PROJECT_LOC/salt/epoch</locationURI>
+		</link>
+		<link>
 			<name>src/salt/ihm</name>
 			<type>2</type>
 			<locationURI>PARENT-4-PROJECT_LOC/salt/ihm</locationURI>
@@ -250,9 +275,44 @@
 			<locationURI>PARENT-4-PROJECT_LOC/salt/ledPanel</locationURI>
 		</link>
 		<link>
+			<name>src/salt/mTime</name>
+			<type>2</type>
+			<locationURI>PARENT-4-PROJECT_LOC/salt/mTime</locationURI>
+		</link>
+		<link>
 			<name>src/salt/main.c</name>
 			<type>1</type>
 			<locationURI>PARENT-4-PROJECT_LOC/salt/main.c</locationURI>
+		</link>
+		<link>
+			<name>src/salt/modcmd</name>
+			<type>2</type>
+			<locationURI>PARENT-4-PROJECT_LOC/salt/modcmd</locationURI>
+		</link>
+		<link>
+			<name>src/salt/modmgr</name>
+			<type>2</type>
+			<locationURI>PARENT-4-PROJECT_LOC/salt/modmgr</locationURI>
+		</link>
+		<link>
+			<name>src/salt/modpwr</name>
+			<type>2</type>
+			<locationURI>PARENT-4-PROJECT_LOC/salt/modpwr</locationURI>
+		</link>
+		<link>
+			<name>src/salt/mqttProt</name>
+			<type>2</type>
+			<locationURI>PARENT-4-PROJECT_LOC/salt/mqttProt</locationURI>
+		</link>
+		<link>
+			<name>src/salt/parser</name>
+			<type>2</type>
+			<locationURI>PARENT-4-PROJECT_LOC/salt/parser</locationURI>
+		</link>
+		<link>
+			<name>src/salt/publisher</name>
+			<type>2</type>
+			<locationURI>PARENT-4-PROJECT_LOC/salt/publisher</locationURI>
 		</link>
 		<link>
 			<name>src/salt/pulseCounter</name>
@@ -263,6 +323,11 @@
 			<name>src/salt/relayControl</name>
 			<type>2</type>
 			<locationURI>PARENT-4-PROJECT_LOC/salt/relayControl</locationURI>
+		</link>
+		<link>
+			<name>src/salt/rtime</name>
+			<type>2</type>
+			<locationURI>PARENT-4-PROJECT_LOC/salt/rtime</locationURI>
 		</link>
 		<link>
 			<name>src/salt/serial</name>
@@ -403,11 +468,6 @@
 			<name>src/bsp/sapi/sapi_uart.c</name>
 			<type>1</type>
 			<location>D:/documentos/ingenieria/uba/tesis/salt-firmware/third-party/sapi/src/sapi_uart.c</location>
-		</link>
-		<link>
-			<name>src/dimba/epoch/epoch.c</name>
-			<type>1</type>
-			<locationURI>PARENT-4-PROJECT_LOC/dimba/epoch/epoch.c</locationURI>
 		</link>
 	</linkedResources>
 </projectDescription>

@@ -4,9 +4,9 @@ project(SALT)
 set(CMAKE_CXX_STANDARD 14)
 
 set(file_search_list
-        "${CMAKE_HOME_DIRECTORY}/dimba/*.h"
-        "${CMAKE_HOME_DIRECTORY}/dimba/*.c"
-        "${CMAKE_HOME_DIRECTORY}/dimba/*.cpp"
+        #"${CMAKE_HOME_DIRECTORY}/dimba/*.h"
+        #"${CMAKE_HOME_DIRECTORY}/dimba/*.c"
+        #"${CMAKE_HOME_DIRECTORY}/dimba/*.cpp"
 
         "${CMAKE_HOME_DIRECTORY}/salt/*.h"
         "${CMAKE_HOME_DIRECTORY}/salt/*.c"
