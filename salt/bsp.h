@@ -52,6 +52,7 @@ enum
     USR_TRACE_EVT,
     USR_TRACE_IN,
     USR_TRACE_SSP,
+    USR_TRACE_MQTT,
 };
 
 /*

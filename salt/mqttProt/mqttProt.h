@@ -22,6 +22,7 @@
 
 /* ----------------------------- Include files ----------------------------- */
 #include "rkh.h"
+#include "mqtt.h"
 
 /* ---------------------- External C language linkage ---------------------- */
 #ifdef __cplusplus
@@ -35,6 +36,8 @@ extern "C" {
 RKH_SMA_DCLR(mqttProt);
 
 /* ------------------------------- Data types ------------------------------ */
+typedef void (*MQTTCallback)(void** state,struct mqtt_response_publish *publish);
+
 typedef struct AppData AppData;
 struct AppData
 {
@@ -53,6 +56,8 @@ struct MQTTProtCfg
     rui16_t keepAlive;      /* in secs */
     char topic[16];
     rui8_t qos;             /* 0, 1 or 2 */
+    MQTTCallback callback;
+    char subTopic[16];
 };
 
 /* -------------------------- External variables --------------------------- */

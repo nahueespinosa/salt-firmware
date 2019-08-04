@@ -645,12 +645,13 @@ static void
 brokerConnect(MQTTProt *const me, RKH_EVT_T *pe)
 {
     mqtt_init(&me->client, 0, me->sendbuf, sizeof(me->sendbuf), 
-              me->recvbuf, sizeof(me->recvbuf), 0);
+              me->recvbuf, sizeof(me->recvbuf), me->config->callback);
     me->operRes = mqtt_connect(&me->client, 
                                me->config->clientId, 
                                NULL, NULL, 0, NULL, NULL, 0, 
                                me->config->keepAlive);
     me->errorStr = mqtt_error_str(me->operRes);
+    mqtt_subscribe(&me->client, me->config->subTopic, 2);
 }
 
 static void 

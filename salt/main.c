@@ -104,6 +104,18 @@ static void debugCb(unsigned char c){
 #endif
 }
 
+static void onMQTTCb(void** state,struct mqtt_response_publish *publish){
+    char dump1[255] = {0};
+    char dump2[255] = {0};
+    sprintf(dump1, "MQTT topic: %.*s", publish->topic_name_size, publish->topic_name);
+    sprintf(dump2, "MQTT data: %.*s", publish->application_message_size, publish->application_message);
+
+    RKH_TRC_USR_BEGIN(USR_TRACE_MQTT)
+        RKH_TUSR_STR(dump1);
+        RKH_TUSR_STR(dump2);
+    RKH_TRC_USR_END();
+}
+
 static void
 saltConfig(void)
 {
@@ -148,6 +160,7 @@ setupTraceFilters(void)
     //RKH_FILTER_OFF_EVENT(USR_TRACE_EVT);
     //RKH_FILTER_OFF_EVENT(USR_TRACE_IN);
     //RKH_FILTER_OFF_EVENT(USR_TRACE_SSP);
+    RKH_FILTER_OFF_EVENT(USR_TRACE_MQTT);
     //RKH_FILTER_OFF_GROUP_ALL_EVENTS(RKH_TG_USR);
     //RKH_FILTER_OFF_EVENT(RKH_TE_TMR_TOUT);
     RKH_FILTER_OFF_EVENT(RKH_TE_SM_STATE);
@@ -172,6 +185,7 @@ void
 saltCfg_topic(char *t)
 {
     sprintf(mqttProtCfg.topic, "/salt/%s", t);
+    sprintf(mqttProtCfg.subTopic, "/salt/cmd");
 }
 
 int
@@ -211,6 +225,8 @@ main(int argc, char *argv[])
     mqttProtCfg.qos = 1;
     strcpy(mqttProtCfg.clientId, "");
     strcpy(mqttProtCfg.topic, "");
+    strcpy(mqttProtCfg.subTopic, "");
+    mqttProtCfg.callback = onMQTTCb;
     MQTTProt_ctor(&mqttProtCfg, publishDimba);
 
     RKH_SMA_ACTIVATE(conMgr, ConMgr_qsto, CONMGR_QSTO_SIZE, 0, 0);

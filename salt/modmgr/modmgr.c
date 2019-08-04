@@ -194,7 +194,7 @@ initialization(ModMgr *const me, RKH_EVT_T *pe)
     RKH_TR_FWK_TUSR(USR_TRACE_EVT);
     RKH_TR_FWK_TUSR(USR_TRACE_IN);
     RKH_TR_FWK_TUSR(USR_TRACE_SSP);
-
+    RKH_TR_FWK_TUSR(USR_TRACE_MQTT);
 
     rkh_queue_init(&qDefer, (const void **)qDefer_sto, SIZEOF_QDEFER, 
                 CV(0));
