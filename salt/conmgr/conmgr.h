@@ -159,9 +159,12 @@ extern "C" {
 #define DOCKLIGHT_SERVER        "181.230.72.86"
 #define DOCKLIGHT_PORT          "33498"
 
+#define HIVE_MQ_SERVER        "broker.hivemq.com"
+#define HIVE_MQ_PORT          "1883"
+
 #define CONNECTION_PROT         "TCP"
-#define CONNECTION_DOMAIN       MOSQUITTO_SERVER
-#define CONNECTION_PORT         MOSQUITTO_PORT
+#define CONNECTION_DOMAIN       HIVE_MQ_SERVER
+#define CONNECTION_PORT         HIVE_MQ_PORT
 
 /* ................................ Signals ................................ */
 /* ........................ Declares active object ......................... */

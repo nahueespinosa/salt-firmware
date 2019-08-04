@@ -733,6 +733,8 @@ lTimeGet(unsigned char pos)
 {
 	(void)pos;
 
+    recCmdFlush();
+
     lTime->tm_sec = 30;
 
     RKH_SET_STATIC_EVENT(RKH_UPCAST(RKH_EVT_T, &localTimeEvt), evResponse);
@@ -741,6 +743,7 @@ lTimeGet(unsigned char pos)
         
     RKH_SMA_POST_FIFO(modMgr, RKH_UPCAST(RKH_EVT_T, &localTimeEvt),
 						      &sim900parser);
+
 }
 
 static void
@@ -765,6 +768,8 @@ static void
 imeiSet(unsigned char pos)
 {
 	(void)pos;
+
+    recCmdFlush();
 
     imeiEvt.buf[IMEI_LENGTH] = '\0';    
 
@@ -799,6 +804,8 @@ copsSet(unsigned char pos)
 {
 	(void)pos;
 
+    recCmdFlush();
+
     *(pCops - 1) = '\0';
 
     RKH_SET_STATIC_EVENT(RKH_UPCAST(RKH_EVT_T, &copsEvt), evResponse);
@@ -831,6 +838,8 @@ static void
 csqSet(unsigned char pos)
 {
     (void)pos;
+
+    recCmdFlush();
 
     *pcsq = '\0';
     sigLevelEvt.value = atoi(csqBuf);

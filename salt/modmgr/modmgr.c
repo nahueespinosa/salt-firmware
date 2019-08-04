@@ -235,6 +235,7 @@ sendCmd(ModMgr *const me, RKH_EVT_T *pe)
     me->channelPuts(me->pCmd->cmd);
 
     RKH_TRC_USR_BEGIN(USR_TRACE_OUT)
+        RKH_TUSR_STR("cmd:");
         RKH_TUSR_STR(me->pCmd->cmd);
     RKH_TRC_USR_END();
 }
@@ -250,7 +251,8 @@ sendData(ModMgr *const me, RKH_EVT_T *pe)
     me->channelPuts(ModCmd_endOfXmitStr());
 #endif
     RKH_TRC_USR_BEGIN(USR_TRACE_OUT)
-		RKH_TUSR_STR("sendData");
+		RKH_TUSR_STR("data:");
+        RKH_TUSR_MEM(me->pCmd->data, me->pCmd->nData);
     RKH_TRC_USR_END();
 }
 
