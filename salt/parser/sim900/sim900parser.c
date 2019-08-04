@@ -148,7 +148,7 @@ SSP_END_BR_TABLE
 
 SSP_CREATE_NORMAL_NODE(at_plus);
 SSP_CREATE_BR_TABLE(at_plus)
-	SSPBR("GSN", imeiInit,  &at_plus_gsn),
+	SSPBR("GSN\r\n", imeiInit,  &at_plus_gsn),
 	SSPBR("C",           NULL,      &at_plus_c),
 	SSPBR("OK\r\n",     cmd_ok,    &rootCmdParser),
 SSP_END_BR_TABLE
