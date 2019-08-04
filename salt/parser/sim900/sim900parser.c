@@ -36,7 +36,7 @@
 /* ---------------------------- Global variables --------------------------- */
 /* ---------------------------- Local variables ---------------------------- */
 static rui8_t sim900parser;
-SSP_DCLR_NORMAL_NODE at, waitOK, at_plus, at_plus_c, at_plus_ci, 
+SSP_DCLR_NORMAL_NODE at, waitOK, at_plus, at_plus_c, at_plus_ci,
                      at_plus_cip, at_plus_cips, 
                      at_plus_cipsta, at_plus_ciprxget,
                      at_plus_ciprxget_2, at_plus_ciprxget_2_wdata,
@@ -46,7 +46,7 @@ SSP_DCLR_NORMAL_NODE at, waitOK, at_plus, at_plus_c, at_plus_ci,
                      at_plus_cipstart,
                      at_plus_cipclose,
                      at_plus_cipsend, at_plus_cipsending, at_plus_cipsent,
-                     at_plus_cpin, at_plus_creg, pinStatus, wpinSet, pinSet,
+                     at_plus_cpin, at_plus_creg, pinStatusHead, pinStatus, wpinSet, pinSet,
                      plus_c, plus_creg, at_plus_cifsr,
                      netClockSync,
                      at_plus_cclk, at_plus_cops, cclk_end;
@@ -124,15 +124,19 @@ static void csqInit(unsigned char pos);
 static void csqCollect(unsigned char c);
 static void csqSet(unsigned char pos);
 
+static void dummy(unsigned char pos);
+static void init_end(unsigned char pos);
+
 /* ---------------------------- Local functions ---------------------------- */
 
 SSP_CREATE_NORMAL_NODE(rootCmdParser);
 SSP_CREATE_BR_TABLE(rootCmdParser)
-	SSPBR("STATE",      NULL,     &rootCmdParser),
-	SSPBR("CONNECT OK", NULL,     &rootCmdParser),
+	//SSPBR("STATE",      NULL,     &rootCmdParser),
+	//SSPBR("CONNECT OK", NULL,     &rootCmdParser),
 	SSPBR("AT",         NULL,     &at),
 	SSPBR("+C",         NULL,     &plus_c),
-	SSPBR("*PSUTTZ",    isURC_set, &netClockSync),
+	SSPBR("*PSUTTZ",    isURC_set,&netClockSync),
+    SSPBR("SMS Ready",  init_end, &rootCmdParser),
 SSP_END_BR_TABLE
 
 SSP_CREATE_NORMAL_NODE(at);
@@ -144,15 +148,15 @@ SSP_END_BR_TABLE
 
 SSP_CREATE_NORMAL_NODE(at_plus);
 SSP_CREATE_BR_TABLE(at_plus)
-	SSPBR("GSN\r\n\r\n", imeiInit,  &at_plus_gsn),
+	SSPBR("GSN", imeiInit,  &at_plus_gsn),
 	SSPBR("C",           NULL,      &at_plus_c),
 	SSPBR("OK\r\n",     cmd_ok,    &rootCmdParser),
 SSP_END_BR_TABLE
 
 SSP_CREATE_NORMAL_NODE(at_plus_c);
 SSP_CREATE_BR_TABLE(at_plus_c)
-	SSPBR("PIN",                NULL,   &at_plus_cpin),
-	SSPBR("REG?;+CSQ\r\n\r\n",  NULL,   &at_plus_creg),
+	SSPBR("PIN",                dummy,   &at_plus_cpin),
+	SSPBR("REG?;+CSQ\r\n",  NULL,   &at_plus_creg),
 	SSPBR("STT=",           NULL,   &waitOK),
 	SSPBR("I",              NULL,   &at_plus_ci),
 	SSPBR("LTS=1",          NULL,   &waitOK),
@@ -197,23 +201,30 @@ SSP_END_BR_TABLE
 /* ---------------------------- AT+CPIN --------------------------- */
 SSP_CREATE_NORMAL_NODE(at_plus_cpin);
 SSP_CREATE_BR_TABLE(at_plus_cpin)
-	SSPBR("?\r\n\r\n",    NULL,  &pinStatus),
+	SSPBR("?\r\n",    NULL,  &pinStatusHead),
 	SSPBR("=",            NULL,  &wpinSet),
 	SSPBR("\r\n",         NULL,  &rootCmdParser),
 SSP_END_BR_TABLE
 
+SSP_CREATE_NORMAL_NODE(pinStatusHead);
+SSP_CREATE_BR_TABLE(pinStatusHead)
+	SSPBR("+CPIN: ", NULL,&pinStatus),
+	SSPBR("\r\n",    NULL,&rootCmdParser),
+SSP_END_BR_TABLE
+
 SSP_CREATE_NORMAL_NODE(pinStatus);
 SSP_CREATE_BR_TABLE(pinStatus)
-	SSPBR("SIM PIN", sim_pin,   &rootCmdParser),
-	SSPBR("ERROR",   sim_error, &rootCmdParser),
-	SSPBR("READY",   sim_ready, &rootCmdParser),
-	SSPBR("\r\n",    NULL,      &rootCmdParser),
+                SSPBR("SIM PIN", sim_pin,   &rootCmdParser),
+                SSPBR("ERROR",   sim_error, &rootCmdParser),
+                SSPBR("READY",   sim_ready, &rootCmdParser),
+                SSPBR("\r\n",    NULL,      &rootCmdParser),
 SSP_END_BR_TABLE
 
 SSP_CREATE_NORMAL_NODE(wpinSet);
 SSP_CREATE_BR_TABLE(wpinSet)
 	SSPBR("\r\n\r\n",   NULL,   &pinSet),
 SSP_END_BR_TABLE
+
 
 SSP_CREATE_NORMAL_NODE(pinSet);
 SSP_CREATE_BR_TABLE(pinSet)
@@ -286,7 +297,7 @@ SSP_END_BR_TABLE
 /* ------------------------ AT+CIPRXGET -------------------------- */
 SSP_CREATE_NORMAL_NODE(at_plus_ciprxget);
 SSP_CREATE_BR_TABLE(at_plus_ciprxget)
-	SSPBR("1\r\n\r\nOK\r\n", cmd_ok,  &rootCmdParser),
+	SSPBR("1",               NULL,    &waitOK),
 	SSPBR("2,",              NULL,    &at_plus_ciprxget_2),
 	SSPBR("\r\n",            NULL,    &rootCmdParser),
 SSP_END_BR_TABLE
@@ -407,6 +418,7 @@ SSP_CREATE_NORMAL_NODE(plus_c);
 SSP_CREATE_BR_TABLE(plus_c)
 	SSPBR("REG:",   isURC_set, &plus_creg),
 	SSPBR("SQ: ",  csqInit,   &plus_csq),
+    SSPBR("PIN",   recCmdFlushC,      &rootCmdParser),
 	SSPBR("\r\n",   NULL,      &rootCmdParser),
 SSP_END_BR_TABLE
 
@@ -481,7 +493,7 @@ cmd_ok(unsigned char pos)
 static void
 cmd_error(unsigned char pos)
 {
-    (void)pos;
+
     
     sendModResp_noArgs(evError);
 }
@@ -831,6 +843,16 @@ csqSet(unsigned char pos)
 						      &sim900parser);
 }
 
+static void dummy(unsigned char pos){
+    int i = 0;
+}
+
+static void init_end(unsigned char pos){
+    isURC = 1;
+
+    sendModResp_noArgs(evInitEnd);
+}
+
 void recCmdCollect(unsigned char c){
     if(recCmdNext == NULL){
         recCmdNext = recCmdBuf;
@@ -842,14 +864,17 @@ void recCmdCollect(unsigned char c){
     ++recCmdNext;
 }
 
+void recCmdFlushC(unsigned char c){
+    recCmdFlush();
+}
+
 void recCmdFlush(){
 
     *recCmdNext = '\0';
 
     char * a = recCmdBuf
 
-    RKH_TRC_USR_BEGIN(MODCMD_USR_TRACE_IN)
-        RKH_TUSR_STR("sendRsp");
+    RKH_TRC_USR_BEGIN(USR_TRACE_IN)
         RKH_TUSR_STR(recCmdBuf);
     RKH_TRC_USR_END();
 

@@ -36,6 +36,7 @@ SSP_DCLR_NORMAL_NODE rootCmdParser;
 /* -------------------------- Function prototypes -------------------------- */
 void parser_init(void);
 void recCmdCollect(unsigned char c);
+void recCmdFlushC(unsigned char c);
 void recCmdFlush();
 
 /* -------------------- External C language linkage end -------------------- */

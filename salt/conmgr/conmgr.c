@@ -36,7 +36,7 @@
 typedef struct ConMgr ConMgr;
 
 /* ................... Declares states and pseudostates .................... */
-RKH_DCLR_BASIC_STATE ConMgr_inactive, ConMgr_sync,
+RKH_DCLR_BASIC_STATE ConMgr_inactive, ConMgr_sync, ConMgr_waitInit,
                 ConMgr_init,ConMgr_error, ConMgr_pin, ConMgr_setPin, ConMgr_enableNetTime,
                 ConMgr_getImei, ConMgr_cipShutdown, ConMgr_setManualGet,
                 ConMgr_waitReg, ConMgr_unregistered, ConMgr_failure,
@@ -111,6 +111,7 @@ static void connectingEntry(ConMgr *const me);
 static void socketConnected(ConMgr *const me);
 static void idleEntry(ConMgr *const me);
 
+static void setInitTimeOut(ConMgr *const me);
 static void errorReport(ConMgr *const me);
 /* ......................... Declares exit actions ......................... */
 static void unregExit(ConMgr *const me);
@@ -160,9 +161,10 @@ RKH_END_TRANS_TABLE
 
 RKH_CREATE_BASIC_STATE(ConMgr_sync, sendSync, NULL, &ConMgr_initialize, NULL);
 RKH_CREATE_TRANS_TABLE(ConMgr_sync)
-    RKH_TRREG(evOk,         NULL, NULL, &ConMgr_init),
+    RKH_TRREG(evOk,         NULL, NULL, &ConMgr_waitInit),
     RKH_TRREG(evNoResponse, NULL, NULL, &ConMgr_checkSyncTry),
 RKH_END_TRANS_TABLE
+
 
 RKH_CREATE_COND_STATE(ConMgr_checkSyncTry);
 RKH_CREATE_BRANCH_TABLE(ConMgr_checkSyncTry)
@@ -170,9 +172,16 @@ RKH_CREATE_BRANCH_TABLE(ConMgr_checkSyncTry)
     RKH_BRANCH(ELSE,           NULL,   &ConMgr_failure),
 RKH_END_BRANCH_TABLE
 
+
+RKH_CREATE_BASIC_STATE(ConMgr_waitInit, setInitTimeOut, NULL, &ConMgr_initialize, NULL);
+RKH_CREATE_TRANS_TABLE(ConMgr_waitInit)
+                //RKH_TRREG(evInitEnd, NULL, NULL, &ConMgr_init),
+                RKH_TRREG(evTimeout, NULL, NULL, &ConMgr_init),
+RKH_END_TRANS_TABLE
+
 RKH_CREATE_BASIC_STATE(ConMgr_init, sendInit, NULL, &ConMgr_initialize, NULL);
 RKH_CREATE_TRANS_TABLE(ConMgr_init)
-    RKH_TRREG(evOk,         NULL, NULL, &ConMgr_pin),
+    RKH_TRREG(evOk,         NULL, NULL, &ConMgr_error),
 RKH_END_TRANS_TABLE
 
 RKH_CREATE_BASIC_STATE(ConMgr_error, errorReport, NULL, &ConMgr_initialize, NULL);
@@ -505,6 +514,7 @@ init(ConMgr *const me, RKH_EVT_T *pe)
     RKH_TR_FWK_STATE(me, &ConMgr_sync);
     RKH_TR_FWK_STATE(me, &ConMgr_checkSyncTry);
 	RKH_TR_FWK_STATE(me, &ConMgr_init);
+    RKH_TR_FWK_STATE(me, &ConMgr_waitInit);
     RKH_TR_FWK_STATE(me, &ConMgr_pin);
     RKH_TR_FWK_STATE(me, &ConMgr_setPin);
     RKH_TR_FWK_STATE(me, &ConMgr_enableNetTime);
@@ -1023,6 +1033,14 @@ idleEntry(ConMgr *const me)
     
     RKH_SET_STATIC_EVENT(&e_tout, evTimeout);
     RKH_TMR_ONESHOT(&me->timer, RKH_UPCAST(RKH_SMA_T, me), CONNSTATUS_PERIOD);
+}
+
+
+static void
+setInitTimeOut(ConMgr *const me)
+{
+    RKH_SET_STATIC_EVENT(&e_tout, evTimeout);
+    RKH_TMR_ONESHOT(&me->timer, RKH_UPCAST(RKH_SMA_T, me), INIT_PERIOD);
 }
 
 static void

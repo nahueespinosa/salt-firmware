@@ -29,19 +29,26 @@
 #define UART_SIM_808_B_LPC          LPC_USART2  /* UART2 (RS232) */
 #define UART_SIM_808_B_BAUDRATE     19200
 #define UART_SIM_808_B_IRQ          USART2_IRQn
-#define UART_SIM_808_B_IRQ_HANDLER  UART2_IRQHandler
 
 #define UART_SIM_808_A_LPC          LPC_USART3  /* UART3 (RS232) */
 #define UART_SIM_808_A_BAUDRATE     19200
 #define UART_SIM_808_A_IRQ          USART3_IRQn
 #define UART_SIM_808_A_IRQ_HANDLER  UART3_IRQHandler
 
+#define UART_DEBUG_LPC          LPC_USART2  /* UART2 (RS232) */
+#define UART_DEBUG_BAUDRATE     19200
+#define UART_DEBUG_IRQ          USART2_IRQn
+
+#define UART_SIM_808_B_OR_DEBUG_IRQ_HANDLER  UART2_IRQHandler
 /* ---------------------------- Local data types --------------------------- */
 /* ---------------------------- Global variables --------------------------- */
 /* ---------------------------- Local variables ---------------------------- */
 static serialIsrCb_t uartTelocCb = NULL;
 static serialIsrCb_t uartSimACb = NULL;
 static serialIsrCb_t uartSimBCb = NULL;
+static serialIsrCb_t uartDebugCb = NULL;
+
+static bool_t uartDebugInit = false;
 /* ----------------------- Local function prototypes ----------------------- */
 /* ---------------------------- Local functions ---------------------------- */
 /* ---------------------------- Global functions --------------------------- */
@@ -93,6 +100,22 @@ void serialInit(serialMap_t serialMap){
             NVIC_SetPriority(UART_TELOC_1500_IRQ, 6);
             NVIC_EnableIRQ(UART_TELOC_1500_IRQ); // Enable Interrupt for UART channel
             break;
+            
+        case UART_DEBUG:
+            uartDebugInit = true;
+            Chip_UART_Init(UART_DEBUG_LPC);
+            Chip_UART_SetBaud(UART_DEBUG_LPC, UART_DEBUG_BAUDRATE);  /* Set Baud rate */
+            Chip_UART_SetupFIFOS(UART_DEBUG_LPC, UART_FCR_FIFO_EN | UART_FCR_TRG_LEV0); /* Modify FCR (FIFO Control Register)*/
+            Chip_UART_TXEnable(UART_DEBUG_LPC); /* Enable UART Transmission */
+            Chip_SCU_PinMux(7, 1, MD_PDN, FUNC6);              /* P7_1,FUNC6: UART2_TXD */
+            Chip_SCU_PinMux(7, 2, MD_PLN|MD_EZI|MD_ZI, FUNC6); /* P7_2,FUNC6: UART2_RXD */
+
+            Chip_UART_IntEnable(UART_DEBUG_LPC, UART_IER_RBRINT ); //Enable UART Rx Interrupt
+            Chip_UART_IntEnable(UART_DEBUG_LPC, UART_IER_RLSINT ); // Enable UART line status interrupt
+            NVIC_SetPriority(UART_DEBUG_IRQ, 6);
+            NVIC_EnableIRQ(UART_DEBUG_IRQ); // Enable Interrupt for UART channel
+            break;
+
 
         default:
             break;
@@ -110,6 +133,9 @@ void serialSetIntCb(serialMap_t serialMap, serialIsrCb_t cb ){
             break;
         case UART_TELOC_1500:
             uartTelocCb = cb;
+            break;
+        case UART_DEBUG:
+            uartDebugCb = cb;
             break;
 
         default:
@@ -131,6 +157,13 @@ void serialPutByte( serialMap_t uart, uint8_t byte ){
         case UART_TELOC_1500:
             while ((Chip_UART_ReadLineStatus(UART_TELOC_1500_LPC) & UART_LSR_THRE) == 0) {}   // Wait for space in FIFO
             Chip_UART_SendByte(UART_TELOC_1500_LPC, byte);
+            break;
+        case UART_DEBUG:
+            if(!uartDebugInit){
+                break;
+            }
+            while ((Chip_UART_ReadLineStatus(UART_DEBUG_LPC) & UART_LSR_THRE) == 0) {}   // Wait for space in FIFO
+            Chip_UART_SendByte(UART_DEBUG_LPC, byte);
             break;
 
         default:
@@ -166,14 +199,18 @@ void UART_TELOC_1500_IRQ_HANDLER(void){
     }
 }
 
-void UART_SIM_808_B_IRQ_HANDLER(void){
+void UART_SIM_808_B_OR_DEBUG_IRQ_HANDLER(void){
     char receivedByte;
 
     if (Chip_UART_ReadLineStatus(UART_SIM_808_B_LPC) & UART_LSR_RDR)
     {
         receivedByte = Chip_UART_ReadByte(UART_SIM_808_B_LPC);
-        if(uartSimBCb != NULL)
+        if(uartSimBCb != NULL){
             (uartSimBCb)(receivedByte);
+        }
+        if(uartDebugCb != NULL){
+            (uartDebugCb)(receivedByte);
+        }
     }
 }
 

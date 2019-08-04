@@ -33,7 +33,7 @@ extern "C" {
 /* ------------------------------- Data types ------------------------------ */
 
 typedef enum{
-    UART_SIM_808_A, UART_SIM_808_B, UART_TELOC_1500
+    UART_SIM_808_A, UART_SIM_808_B, UART_TELOC_1500, UART_DEBUG,
 } serialMap_t;
 
 typedef void (* serialIsrCb_t)(unsigned char c);

@@ -37,14 +37,21 @@ extern "C" {
 /* --------------------------------- Macros -------------------------------- */
 /* -------------------------------- Constants ------------------------------ */
 
+#define DEBUG_SERIAL
+
+#define SEND_TRACE
+//#define DEBUG_SERIAL_PASS
+
 /*
  * User trace events id�s
  */
 enum
 {
-    MODCMD_USR_TRACE = RKH_TE_USER,
-    MODCMD_USR_TRACE_OUT,
-    MODCMD_USR_TRACE_IN,
+    USR_TRACE = RKH_TE_USER,
+    USR_TRACE_OUT,
+    USR_TRACE_EVT,
+    USR_TRACE_IN,
+    USR_TRACE_SSP,
 };
 
 /*

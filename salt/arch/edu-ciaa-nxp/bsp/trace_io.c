@@ -50,6 +50,7 @@
 #include "rkh.h"
 #include "bsp.h"
 #include "sapi.h"
+#include "serial.h"
 
 #if RKH_CFG_TRC_EN == 1
 /* ----------------------------- Local macros ------------------------------ */
@@ -68,7 +69,6 @@ void
 rkh_trc_open(void)
 {
     rkh_trc_init();
-    uartConfig(TRC_COM_PORT, TRC_BAUD_RATE);
     RKH_TRC_SEND_CFG(BSP_TS_RATE_HZ);
 }
 
@@ -96,7 +96,10 @@ rkh_trc_flush(void)
         {
             while (nbytes--)
             {
-                //uartWriteByte(TRC_COM_PORT,*blk++);
+#ifdef SEND_TRACE
+                rui8_t c = *blk++;
+                serialPutByte(UART_DEBUG,c);
+#endif
             }
         }
         else

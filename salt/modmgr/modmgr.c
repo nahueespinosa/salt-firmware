@@ -142,9 +142,8 @@ forwardModMgrEvt(RKH_SMA_T *ao, RKH_EVT_T *pe)
     presp->evt.e = presp->fwdEvt;
 
     char dump[5] = {0};
-    sprintf(dump, "%02x", presp->fwdEvt);
-    RKH_TRC_USR_BEGIN(MODCMD_USR_TRACE_IN)
-        RKH_TUSR_STR("RspEvent");
+    sprintf(dump, "%d", presp->fwdEvt);
+    RKH_TRC_USR_BEGIN(USR_TRACE_EVT)
         RKH_TUSR_STR(dump);
     RKH_TRC_USR_END();
 
@@ -166,12 +165,6 @@ static void sim808AChannelClose(){
 
 static void sim808APuts(char *p){
     serialPutString(UART_SIM_808_A, p);
-
-    RKH_ENTER_CRITICAL();
-    serialPutString(UART_SIM_808_B, "\n-*-*-*-*-*-*-*-");
-    serialPutString(UART_SIM_808_B, p);
-    serialPutString(UART_SIM_808_B, "-*-*-*-*-*-*-*-\n");
-    RKH_EXIT_CRITICAL();
 }
 
 static void sim808APutnchar(unsigned char *p, ruint ndata){
@@ -196,9 +189,11 @@ initialization(ModMgr *const me, RKH_EVT_T *pe)
     RKH_TR_FWK_SIG(evTimeout);
     RKH_TR_FWK_SIG(evResponse);
     RKH_TR_FWK_SIG(evNoResponse);
-	RKH_TR_FWK_TUSR(MODCMD_USR_TRACE);
-    RKH_TR_FWK_TUSR(MODCMD_USR_TRACE_OUT);
-    RKH_TR_FWK_TUSR(MODCMD_USR_TRACE_IN);
+    RKH_TR_FWK_TUSR(USR_TRACE);
+    RKH_TR_FWK_TUSR(USR_TRACE_OUT);
+    RKH_TR_FWK_TUSR(USR_TRACE_EVT);
+    RKH_TR_FWK_TUSR(USR_TRACE_IN);
+    RKH_TR_FWK_TUSR(USR_TRACE_SSP);
 
 
     rkh_queue_init(&qDefer, (const void **)qDefer_sto, SIZEOF_QDEFER, 
@@ -239,8 +234,7 @@ sendCmd(ModMgr *const me, RKH_EVT_T *pe)
 
     me->channelPuts(me->pCmd->cmd);
 
-    RKH_TRC_USR_BEGIN(MODCMD_USR_TRACE_OUT)
-        RKH_TUSR_STR("sendCmd");
+    RKH_TRC_USR_BEGIN(USR_TRACE_OUT)
         RKH_TUSR_STR(me->pCmd->cmd);
     RKH_TRC_USR_END();
 }
@@ -255,7 +249,7 @@ sendData(ModMgr *const me, RKH_EVT_T *pe)
 #ifdef _SEND_WITH_TERMINATOR
     me->channelPuts(ModCmd_endOfXmitStr());
 #endif
-    RKH_TRC_USR_BEGIN(MODCMD_USR_TRACE_OUT)
+    RKH_TRC_USR_BEGIN(USR_TRACE_OUT)
 		RKH_TUSR_STR("sendData");
     RKH_TRC_USR_END();
 }
@@ -303,7 +297,7 @@ static void
 setupResponse(ModMgr *const me)
 {
     RKH_SET_STATIC_EVENT(&e_tout, evToutWaitResponse);
-    RKH_TMR_ONESHOT(&me->timer, RKH_UPCAST(RKH_SMA_T, me), 
+    RKH_TMR_ONESHOT(&me->timer, RKH_UPCAST(RKH_SMA_T, me),
                     me->pCmd->args.waitResponseTime);
 }
 

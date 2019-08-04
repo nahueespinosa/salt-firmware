@@ -117,6 +117,11 @@ extern "C" {
 #define OPER_BUF_SIZE       OPER_LENGTH + 1
 
 /**
+ * Specifies init delay period.
+ */
+#define INIT_PERIOD   RKH_TIME_MS(30000)
+
+/**
  * GSM Network Provider and Connection specific configurations.
  */
 /* .................................. APN .................................. */
@@ -136,7 +141,7 @@ extern "C" {
 #define PERSONAL_APN_PASS       "datos"
 
 /* .................................. SIM PIN .............................. */
-#define SIM_PIN_NUMBER          9474
+#define SIM_PIN_NUMBER          1234
 
 /* ................................. Server ................................ */
 #define MOSQUITTO_SERVER        "test.mosquitto.org"
