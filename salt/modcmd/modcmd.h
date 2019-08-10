@@ -71,6 +71,8 @@ char *ModCmd_endOfXmitStr(void);
 
 void ModCmd_errorReport(void);
 void ModCmd_startGPS(void);
+void ModCmd_getGPS(void);
+
 
 
 /* -------------------- External C language linkage end -------------------- */

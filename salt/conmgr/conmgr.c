@@ -116,6 +116,7 @@ static void idleEntry(ConMgr *const me);
 static void setInitTimeOut(ConMgr *const me);
 static void errorReport(ConMgr *const me);
 static void initGps(ConMgr *const me);
+static void getGps(ConMgr *const me);
 /* ......................... Declares exit actions ......................... */
 static void unregExit(ConMgr *const me);
 static void regExit(ConMgr *const me);
@@ -1088,6 +1089,12 @@ static void
 initGps(ConMgr *const me)
 {
     ModCmd_startGPS();
+}
+
+static void
+getGps(ConMgr *const me)
+{
+    ModCmd_getGPS();
 }
 
 

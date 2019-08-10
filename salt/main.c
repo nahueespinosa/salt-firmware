@@ -79,12 +79,8 @@ static void onSwitchCb(bool_t activated){
 static void simACb(unsigned char c){
 #ifdef DEBUG_SERIAL_PASS
     serialPutByte(UART_DEBUG,c);
-#else
-#ifndef SEND_TRACE
-    serialPutByte(UART_DEBUG,c);
 #endif
     simACmdParser(c);
-#endif
 
 }
 
@@ -99,7 +95,7 @@ static void telocCb(unsigned char c){
 static void debugCb(unsigned char c){
 
 #ifdef DEBUG_SERIAL_PASS
-    serialPutByte(UART_DEBUG,c);
+    //serialPutByte(UART_DEBUG,c);
     serialPutByte(UART_SIM_808_A,c);
 #endif
 }
@@ -170,7 +166,7 @@ setupTraceFilters(void)
     //RKH_FILTER_OFF_EVENT(RKH_TE_SM_DCH);
     //RKH_FILTER_OFF_SMA(modMgr);
     RKH_FILTER_OFF_SMA(conMgr);
-    //RKH_FILTER_OFF_SMA(mqttProt);
+    RKH_FILTER_OFF_SMA(mqttProt);
     RKH_FILTER_OFF_ALL_SIGNALS();
 }
 
@@ -193,20 +189,6 @@ main(int argc, char *argv[])
 {
 
     saltConfig();
-
-#ifdef DEBUG_SERIAL_PASS
-
-    modPwr_on();
-
-    while(1){
-        gpioWrite( LED1, ON );
-        delay(500);
-
-        gpioWrite( LED1, OFF );
-        delay(500);
-
-    }
-#endif
 
     rkh_fwk_init();
 

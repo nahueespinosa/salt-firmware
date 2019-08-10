@@ -164,6 +164,11 @@ static void sim808AChannelClose(){
 }
 
 static void sim808APuts(char *p){
+#ifdef DEBUG_SERIAL_PASS
+    serialPutByte(UART_DEBUG,'#');
+    serialPutString(UART_DEBUG,p);
+    serialPutByte(UART_DEBUG,'#');
+#endif
     serialPutString(UART_SIM_808_A, p);
 }
 

@@ -55,7 +55,8 @@ SSP_DCLR_NORMAL_NODE at, waitOK, at_plus, at_plus_c, at_plus_ci,
                      plus_c, plus_creg, at_plus_cifsr,
                      netClockSync,
                      at_plus_cclk, at_plus_cops, cclk_end,
-                     at_plus_cgps, gps_end;
+                     at_plus_cgps, gps_end,
+                     at_plus_gsn_pre, at_plus_creg_pre, pinStatusHead_pre;
 
 SSP_DCLR_TRN_NODE at_plus_ciprxget_data, cclk_year, cclk_month, cclk_day,
                   cclk_hour, cclk_min, plus_csq, at_plus_gsn, cops_read,
@@ -184,15 +185,15 @@ SSP_END_BR_TABLE
 
 SSP_CREATE_NORMAL_NODE(at_plus);
 SSP_CREATE_BR_TABLE(at_plus)
-	SSPBR("GSN\r\n", imeiInit,  &at_plus_gsn),
-	SSPBR("C",           NULL,      &at_plus_c),
+	SSPBR("GSN",        NULL,  &at_plus_gsn_pre),
+	SSPBR("C",          NULL,      &at_plus_c),
 	SSPBR("OK\r\n",     cmd_ok,    &rootCmdParser),
 SSP_END_BR_TABLE
 
 SSP_CREATE_NORMAL_NODE(at_plus_c);
 SSP_CREATE_BR_TABLE(at_plus_c)
 	SSPBR("PIN",                dummy,   &at_plus_cpin),
-	SSPBR("REG?;+CSQ\r\n",  NULL,   &at_plus_creg),
+	SSPBR("REG?;+CSQ",  NULL,   &at_plus_creg_pre),
 	SSPBR("STT=",           NULL,   &waitOK),
 	SSPBR("I",              NULL,   &at_plus_ci),
 	SSPBR("LTS=1",          NULL,   &waitOK),
@@ -205,8 +206,8 @@ SSP_END_BR_TABLE
 
 SSP_CREATE_NORMAL_NODE(at_plus_ci);
 SSP_CREATE_BR_TABLE(at_plus_ci)
-	SSPBR("FSR\r\n",      NULL,  &at_plus_cifsr),
-	SSPBR("ICR\r\n",      NULL,  &waitOK),
+	SSPBR("FSR",          NULL,  &at_plus_cifsr),
+	SSPBR("ICR",          NULL,  &waitOK),
 	SSPBR("P",            NULL,  &at_plus_cip),
 	SSPBR("\r\n",         NULL,  &rootCmdParser),
 SSP_END_BR_TABLE
@@ -229,7 +230,7 @@ SSP_END_BR_TABLE
 
 SSP_CREATE_NORMAL_NODE(at_plus_cipsta);
 SSP_CREATE_BR_TABLE(at_plus_cipsta)
-	SSPBR("TUS;+CSQ\r\n",      NULL,  &at_plus_cipstatus),
+	SSPBR("TUS;+CSQ",     NULL,  &at_plus_cipstatus),
 	SSPBR("RT=",          NULL,  &at_plus_cipstart),
 	SSPBR("\r\n",         NULL,  &rootCmdParser),
 SSP_END_BR_TABLE
@@ -238,10 +239,16 @@ SSP_END_BR_TABLE
 /* ---------------------------- AT+CPIN --------------------------- */
 SSP_CREATE_NORMAL_NODE(at_plus_cpin);
 SSP_CREATE_BR_TABLE(at_plus_cpin)
-	SSPBR("?\r\n",    NULL,  &pinStatusHead),
+	SSPBR("?",            NULL,  &pinStatusHead_pre),
 	SSPBR("=",            NULL,  &wpinSet),
 	SSPBR("\r\n",         NULL,  &rootCmdParser),
 SSP_END_BR_TABLE
+
+SSP_CREATE_NORMAL_NODE(pinStatusHead_pre);
+SSP_CREATE_BR_TABLE(pinStatusHead_pre)
+                SSPBR("\r\n",    NULL,&pinStatusHead),
+SSP_END_BR_TABLE
+
 
 SSP_CREATE_NORMAL_NODE(pinStatusHead);
 SSP_CREATE_BR_TABLE(pinStatusHead)
@@ -271,6 +278,11 @@ SSP_END_BR_TABLE
 
 /* --------------------------------------------------------------- */
 /* --------------------------- AT+CREG --------------------------- */
+SSP_CREATE_NORMAL_NODE(at_plus_creg_pre);
+SSP_CREATE_BR_TABLE(at_plus_creg_pre)
+                SSPBR("\r\n",    NULL,  &at_plus_creg),
+SSP_END_BR_TABLE
+
 SSP_CREATE_NORMAL_NODE(at_plus_creg);
 SSP_CREATE_BR_TABLE(at_plus_creg)
 	SSPBR("1,",      NULL,  &plus_creg),
@@ -485,6 +497,12 @@ SSP_CREATE_BR_TABLE(netClockSync)
 SSP_END_BR_TABLE
 
 /* ---------------------------- AT+GSN --------------------------- */
+SSP_CREATE_NORMAL_NODE(at_plus_gsn_pre);
+SSP_CREATE_BR_TABLE(at_plus_gsn_pre)
+                SSPBR("\r\n",   imeiInit, &at_plus_gsn),
+SSP_END_BR_TABLE
+
+
 SSP_CREATE_TRN_NODE(at_plus_gsn, imeiCollect);
 SSP_CREATE_BR_TABLE(at_plus_gsn)
 	SSPBR("OK\r\n", imeiSet, &rootCmdParser),

@@ -57,6 +57,7 @@ struct CmdTbl
     ModCmd errorReport;
     ModCmd gpsPowerOn;
     ModCmd gpsPowerOff;
+    ModCmd gpsGet;
 };
 
 
@@ -180,10 +181,15 @@ static const CmdTbl cmdTbl =
      RKH_TIME_MS(5000), RKH_TIME_MS(100)},
     {RKH_INIT_STATIC_EVT(evCmd),
      "AT+CGPSPWR=1;+CGPSOUT=32\r\n",
+     //"AT+CGPSPWR=1\r\n",
      &conMgr,
      RKH_TIME_MS(5000), RKH_TIME_MS(500)},
     {RKH_INIT_STATIC_EVT(evCmd),
      "AT+CGPSOUT=0;+CGPSPWR=0\r\n",
+     &conMgr,
+     RKH_TIME_MS(5000), RKH_TIME_MS(100)},
+    {RKH_INIT_STATIC_EVT(evCmd),
+     "AT+CGPSINF=32\r\n",
      &conMgr,
      RKH_TIME_MS(5000), RKH_TIME_MS(100)},
 };
@@ -404,6 +410,12 @@ void
 ModCmd_startGPS(void)
 {
     sendModCmd_noArgs(&cmdTbl.gpsPowerOn);
+}
+
+void
+ModCmd_getGPS(void)
+{
+    sendModCmd_noArgs(&cmdTbl.gpsGet);
 }
 
 /* ------------------------------ End of file ------------------------------ */
