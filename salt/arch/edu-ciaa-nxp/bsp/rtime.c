@@ -19,8 +19,8 @@
 #include "sapi.h"
 
 /* ----------------------------- Local macros ------------------------------ */
-#define RunLed_init()      gpioConfig(LEDR, GPIO_OUTPUT)
-#define RunLed_toggle()    gpioToggle(LEDR)
+#define RunLed_init()      //gpioConfig(LEDR, GPIO_OUTPUT)
+#define RunLed_toggle()    //gpioToggle(LEDR)
 
 /* ------------------------------- Constants ------------------------------- */
 /* ---------------------------- Local data types --------------------------- */

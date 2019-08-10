@@ -26,6 +26,14 @@ extern "C" {
 
 /* --------------------------------- Macros -------------------------------- */
 /* -------------------------------- Constants ------------------------------ */
+enum RKH_SMA_PRIORITY{
+    MOD_MGR_A_PRIORITY,
+    MOD_MGR_B_PRIORITY,
+    CON_MGR_PRIORITY,
+    MQTT_PRIORITY,
+    MQTT_SYNC_PRIORITY,
+    RKH_SMA_COUNT
+};
 /* ------------------------------- Data types ------------------------------ */
 /* -------------------------- External variables --------------------------- */
 /* -------------------------- Function prototypes -------------------------- */

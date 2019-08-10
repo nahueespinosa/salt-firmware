@@ -31,14 +31,18 @@ extern "C" {
 /* -------------------------------- Constants ------------------------------ */
 SSP_DCLR_NORMAL_NODE rootCmdParser;
 
+enum SIM_808_PARSER_INDEX {
+    SIM_808_PARSER_A_INDEX, SIM_808_PARSER_B_INDEX,
+    NUM_SIM_808_PARSER,
+    SIM_808_PARSER_NONE_INDEX
+};
+
 /* ------------------------------- Data types ------------------------------ */
 /* -------------------------- External variables --------------------------- */
 /* -------------------------- Function prototypes -------------------------- */
-void parser_init(void);
-void recCmdCollect(unsigned char c);
-void recCmdFlushC(unsigned char c);
-void recCmdFlush();
-
+void sim808parser_doSearch(SSP* parser, unsigned char c);
+SSP * sim808parser_getSSP(enum SIM_808_PARSER_INDEX index);
+SSP * sim808parser_initSSP(enum SIM_808_PARSER_INDEX index, RKH_SMA_T* modMgr);
 /* -------------------- External C language linkage end -------------------- */
 #ifdef __cplusplus
 }

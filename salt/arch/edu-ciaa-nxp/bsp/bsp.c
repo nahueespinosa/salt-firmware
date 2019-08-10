@@ -36,12 +36,7 @@
 RKH_THIS_MODULE
 
 /* ----------------------------- Local macros ------------------------------ */
-#define ModStatus_init()    gpioConfig(LED1, GPIO_OUTPUT)
-#define ModStatus(b)        gpioWrite(LED1, b)
-#define ModStatus_toggle()  gpioToggle(LED1)
-#define RegStatus_init()    gpioConfig(LED2, GPIO_OUTPUT)
 #define RegStatus(b)        gpioWrite(LED2, b)
-#define NetStatus_init()    gpioConfig(LED3, GPIO_OUTPUT)
 #define NetStatus(b)        gpioWrite(LED3, b)
 
 /* ------------------------------- Constants ------------------------------- */
@@ -79,10 +74,9 @@ bsp_init()
     gpioConfig( LED2, GPIO_OUTPUT );
     gpioConfig( LED3, GPIO_OUTPUT );
 
-    ModStatus_init();
-    ModStatus(0);
+    bsp_modStatus(0, DisconnectedSt);
+    bsp_modStatus(1, DisconnectedSt);
     RegStatus(UnregisteredSt);
-    NetStatus_init();
     NetStatus(DisconnectedSt);
 
     modPwr_init();
@@ -116,10 +110,32 @@ bsp_netStatus(Status_t status)
     NetStatus(status);
 }
 
+void bsp_modStatus(int ch, Status_t status){
+    switch(ch){
+        case 0:
+            gpioWrite(LED1, status);
+            break;
+        case 1:
+            gpioWrite(LEDR, status);
+            break;
+        default:
+            break;
+    }
+}
+
 void 
-bsp_modStatusToggle(void)
+bsp_modStatusToggle(int ch)
 {
-    ModStatus_toggle();
+    switch(ch){
+        case 0:
+            gpioToggle(LED1);
+            break;
+        case 1:
+            gpioToggle(LEDR);
+            break;
+        default:
+            break;
+    }
 }
 
 

@@ -38,8 +38,46 @@
 #define REC_CMD_LENGTH      200
 
 /* ---------------------------- Local data types --------------------------- */
+typedef struct SSP_SIM808 SSP_SIM808;
+struct SSP_SIM808
+{
+    SSP ssp;       /* base structure */
+    RKH_SMA_T* modMgr;
+
+    rui8_t isURC;
+
+    unsigned char *prx;
+    ReceivedEvt *precv;
+
+    LocalTimeEvt localTimeEvt;
+    Time *lTime;
+    char ltbuf[LTBUFF_SIZE];
+    char *plt;
+
+    ImeiEvt imeiEvt;
+    char *pImei;
+
+    OperEvt copsEvt;
+    char *pCops;
+
+    char *pcsq;
+    char csqBuf[CSQ_LENGTH];
+    SigLevelEvt sigLevelEvt;
+
+    GpsEvt gpsEvt;
+    GpsData *gpsData;
+    char gpsbuf[GPS_BUFF_SIZE];
+    char gpsAuxbuf[GPS_AUX_BUFF_SIZE];
+    char *pgps;
+
+    char recCmdBuf[REC_CMD_LENGTH];
+    char *recCmdNext;
+};
+
 /* ---------------------------- Global variables --------------------------- */
 /* ---------------------------- Local variables ---------------------------- */
+static SSP_SIM808 sim808AParser;
+static SSP_SIM808 sim808BParser;
 static rui8_t sim900parser;
 SSP_DCLR_NORMAL_NODE at, waitOK, at_plus, at_plus_c, at_plus_ci,
                      at_plus_cip, at_plus_cips, 
@@ -64,86 +102,56 @@ SSP_DCLR_TRN_NODE at_plus_ciprxget_data, cclk_year, cclk_month, cclk_day,
                   gps_longitude, gps_longitude_indicator, gps_speed, gps_course,
                   gps_date;
 
-static rui8_t isURC;
-
-static unsigned char *prx;
-static ReceivedEvt *precv;
-
-static LocalTimeEvt localTimeEvt;
-static Time *lTime;
-static char ltbuf[LTBUFF_SIZE];
-static char *plt;
-
-static ImeiEvt imeiEvt;
-static char *pImei;
-
-static OperEvt copsEvt;
-static char *pCops;
-
-char *pcsq;
-char csqBuf[CSQ_LENGTH];
-static SigLevelEvt sigLevelEvt;
-
-static GpsEvt gpsEvt;
-static GpsData *gpsData;
-static char gpsbuf[GPS_BUFF_SIZE];
-static char gpsAuxbuf[GPS_AUX_BUFF_SIZE];
-static char *pgps;
-
-char recCmdBuf[REC_CMD_LENGTH];
-char *recCmdNext = NULL;
-
 /* ----------------------- Local function prototypes ----------------------- */
-static void cmd_ok(unsigned char pos);
-static void cmd_error(unsigned char pos);
-static void sim_pin(unsigned char pos);
-static void sim_error(unsigned char pos);
-static void sim_ready(unsigned char pos);
-static void isURC_set(unsigned char pos);
-static void registered(unsigned char pos);
-static void registered(unsigned char pos);
-static void no_registered(unsigned char pos);
-static void ipInitial(unsigned char pos);
-static void ipStart(unsigned char pos);
-static void ipStatus(unsigned char pos);
-static void ipGprsAct(unsigned char pos);
-static void ipDone(unsigned char pos);
-static void connecting(unsigned char pos);
-static void closed(unsigned char pos);
-static void connected(unsigned char pos);
-static void disconnected(unsigned char pos);
-static void data_init(unsigned char pos);
-static void data_collect(unsigned char c);
-static void data_ready(unsigned char pos);
-static void netClock_rcv(unsigned char pos);
-static void lTimeInit(unsigned char pos);
-static void yearCollect(unsigned char c);
+static void cmd_ok(SSP_SIM808 *const me, unsigned char pos);
+static void cmd_error(SSP_SIM808 *const me, unsigned char pos);
+static void sim_pin(SSP_SIM808 *const me, unsigned char pos);
+static void sim_error(SSP_SIM808 *const me, unsigned char pos);
+static void sim_ready(SSP_SIM808 *const me, unsigned char pos);
+static void isURC_set(SSP_SIM808 *const me, unsigned char pos);
+static void registered(SSP_SIM808 *const me, unsigned char pos);
+static void no_registered(SSP_SIM808 *const me, unsigned char pos);
+static void ipInitial(SSP_SIM808 *const me, unsigned char pos);
+static void ipStart(SSP_SIM808 *const me, unsigned char pos);
+static void ipStatus(SSP_SIM808 *const me, unsigned char pos);
+static void ipGprsAct(SSP_SIM808 *const me, unsigned char pos);
+static void ipDone(SSP_SIM808 *const me, unsigned char pos);
+static void connecting(SSP_SIM808 *const me, unsigned char pos);
+static void closed(SSP_SIM808 *const me, unsigned char pos);
+static void connected(SSP_SIM808 *const me, unsigned char pos);
+static void disconnected(SSP_SIM808 *const me, unsigned char pos);
+static void data_init(SSP_SIM808 *const me, unsigned char pos);
+static void data_collect(SSP_SIM808 *const me, unsigned char c);
+static void data_ready(SSP_SIM808 *const me, unsigned char pos);
+static void netClock_rcv(SSP_SIM808 *const me, unsigned char pos);
+static void lTimeInit(SSP_SIM808 *const me, unsigned char pos);
+static void yearCollect(SSP_SIM808 *const me, unsigned char c);
 
 #define monthCollect    yearCollect
 #define dayCollect      yearCollect
 #define hourCollect     yearCollect
 #define minCollect      yearCollect
 
-static void yearGet(unsigned char pos);
-static void monthGet(unsigned char pos);
-static void dayGet(unsigned char pos);
-static void hourGet(unsigned char pos);
-static void minGet(unsigned char pos);
-static void lTimeGet(unsigned char pos);
-static void imeiInit(unsigned char pos);
-static void imeiCollect(unsigned char c);
-static void imeiSet(unsigned char pos);
-static void copsInit(unsigned char pos);
-static void copsCollect(unsigned char c);
-static void copsSet(unsigned char pos);
-static void csqInit(unsigned char pos);
-static void csqCollect(unsigned char c);
-static void csqSet(unsigned char pos);
+static void yearGet(SSP_SIM808 *const me, unsigned char pos);
+static void monthGet(SSP_SIM808 *const me, unsigned char pos);
+static void dayGet(SSP_SIM808 *const me, unsigned char pos);
+static void hourGet(SSP_SIM808 *const me, unsigned char pos);
+static void minGet(SSP_SIM808 *const me, unsigned char pos);
+static void lTimeGet(SSP_SIM808 *const me, unsigned char pos);
+static void imeiInit(SSP_SIM808 *const me, unsigned char pos);
+static void imeiCollect(SSP_SIM808 *const me, unsigned char c);
+static void imeiSet(SSP_SIM808 *const me, unsigned char pos);
+static void copsInit(SSP_SIM808 *const me, unsigned char pos);
+static void copsCollect(SSP_SIM808 *const me, unsigned char c);
+static void copsSet(SSP_SIM808 *const me, unsigned char pos);
+static void csqInit(SSP_SIM808 *const me, unsigned char pos);
+static void csqCollect(SSP_SIM808 *const me, unsigned char c);
+static void csqSet(SSP_SIM808 *const me, unsigned char pos);
 
-static void dummy(unsigned char pos);
-static void init_end(unsigned char pos);
-static void gpsInit(unsigned char pos);
-static void gpsTimeCollect(unsigned char c);
+static void dummy(SSP_SIM808 *const me, unsigned char pos);
+static void init_end(SSP_SIM808 *const me, unsigned char pos);
+static void gpsInit(SSP_SIM808 *const me, unsigned char pos);
+static void gpsTimeCollect(SSP_SIM808 *const me, unsigned char c);
 #define gpsStatusCollect                gpsTimeCollect
 #define gpsLatitudeCollect              gpsTimeCollect
 #define gpsLatitudeIndicatorCollect     gpsTimeCollect
@@ -152,16 +160,20 @@ static void gpsTimeCollect(unsigned char c);
 #define gpsSpeedCollect                 gpsTimeCollect
 #define gpsCourseCollect                gpsTimeCollect
 #define gpsDateCollect                  gpsTimeCollect
-static void gpsTimeSet(unsigned char pos);
-static void gpsStatusSet(unsigned char pos);
-static void gpsLatitudeSet(unsigned char pos);
-static void gpsLatitudeIndicatorSet(unsigned char pos);
-static void gpsLongitudeSet(unsigned char pos);
-static void gpsLongitudeIndicatorSet(unsigned char pos);
-static void gpsSpeedSet(unsigned char pos);
-static void gpsCourseSet(unsigned char pos);
-static void gpsDateSet(unsigned char pos);
-static void gpsSet(unsigned char pos);
+static void gpsTimeSet(SSP_SIM808 *const me, unsigned char pos);
+static void gpsStatusSet(SSP_SIM808 *const me, unsigned char pos);
+static void gpsLatitudeSet(SSP_SIM808 *const me, unsigned char pos);
+static void gpsLatitudeIndicatorSet(SSP_SIM808 *const me, unsigned char pos);
+static void gpsLongitudeSet(SSP_SIM808 *const me, unsigned char pos);
+static void gpsLongitudeIndicatorSet(SSP_SIM808 *const me, unsigned char pos);
+static void gpsSpeedSet(SSP_SIM808 *const me, unsigned char pos);
+static void gpsCourseSet(SSP_SIM808 *const me, unsigned char pos);
+static void gpsDateSet(SSP_SIM808 *const me, unsigned char pos);
+static void gpsSet(SSP_SIM808 *const me, unsigned char pos);
+
+void recCmdCollect(SSP_SIM808 *const me, unsigned char c);
+void recCmdFlushC(SSP_SIM808 *const me, unsigned char c);
+void recCmdFlush(SSP_SIM808 *const me);
 
 /* ---------------------------- Local functions ---------------------------- */
 
@@ -570,611 +582,639 @@ SSP_END_BR_TABLE
 /* --------------------------------------------------------------- */
 
 static void
-sendModResp_noArgs(RKH_SIG_T sig)
+sendModResp_noArgs(SSP_SIM808 *const me, RKH_SIG_T sig)
 {
     ModMgrResp *p;
     RKH_SIG_T ModMgrSignal = evResponse;
 
-    recCmdFlush();
+    recCmdFlush(me);
        
-    if(isURC)
+    if(me->isURC)
     {
-        isURC = 0;
+        me->isURC = 0;
         ModMgrSignal = evURC;
     }
 
     p = RKH_ALLOC_EVT( ModMgrResp, ModMgrSignal, &sim900parser );
     p->fwdEvt = sig;
-    RKH_SMA_POST_FIFO( modMgr, RKH_UPCAST(RKH_EVT_T, p), &sim900parser );
+    RKH_SMA_POST_FIFO(me->modMgr, RKH_UPCAST(RKH_EVT_T, p), &sim900parser );
 }
 
 static void
-isURC_set(unsigned char pos)
+isURC_set(SSP_SIM808 *const me, unsigned char pos)
 {
     (void)pos;
 
-    isURC = 1;
+    me->isURC = 1;
 }
 
 static void
-cmd_ok(unsigned char pos)
-{
-    (void)pos;
-    
-    sendModResp_noArgs(evOk);
-}
-
-static void
-cmd_error(unsigned char pos)
-{
-
-    
-    sendModResp_noArgs(evError);
-}
-
-static void
-sim_pin(unsigned char pos)
+cmd_ok(SSP_SIM808 *const me, unsigned char pos)
 {
     (void)pos;
     
-    sendModResp_noArgs(evSimPin);
+    sendModResp_noArgs(me, evOk);
 }
 
 static void
-sim_error(unsigned char pos)
+cmd_error(SSP_SIM808 *const me, unsigned char pos)
+{
+
+    
+    sendModResp_noArgs(me, evError);
+}
+
+static void
+sim_pin(SSP_SIM808 *const me, unsigned char pos)
 {
     (void)pos;
     
-    sendModResp_noArgs(evSimError);
+    sendModResp_noArgs(me, evSimPin);
 }
 
 static void
-sim_ready(unsigned char pos)
+sim_error(SSP_SIM808 *const me, unsigned char pos)
 {
     (void)pos;
     
-    sendModResp_noArgs(evSimReady);
+    sendModResp_noArgs(me, evSimError);
 }
 
 static void
-registered(unsigned char pos)
+sim_ready(SSP_SIM808 *const me, unsigned char pos)
 {
     (void)pos;
     
-    sendModResp_noArgs(evReg);
+    sendModResp_noArgs(me, evSimReady);
 }
 
 static void
-no_registered(unsigned char pos)
+registered(SSP_SIM808 *const me, unsigned char pos)
 {
     (void)pos;
     
-    sendModResp_noArgs(evNoReg);
+    sendModResp_noArgs(me, evReg);
 }
 
 static void
-ipInitial(unsigned char pos)
+no_registered(SSP_SIM808 *const me, unsigned char pos)
 {
     (void)pos;
     
-    sendModResp_noArgs(evIPInitial);
+    sendModResp_noArgs(me, evNoReg);
 }
 
 static void
-ipStart(unsigned char pos)
+ipInitial(SSP_SIM808 *const me, unsigned char pos)
 {
     (void)pos;
     
-    sendModResp_noArgs(evIPStart);
+    sendModResp_noArgs(me, evIPInitial);
 }
 
 static void
-ipStatus(unsigned char pos)
+ipStart(SSP_SIM808 *const me, unsigned char pos)
 {
     (void)pos;
     
-    sendModResp_noArgs(evIPStatus);
+    sendModResp_noArgs(me, evIPStart);
 }
 
 static void
-ipGprsAct(unsigned char pos)
+ipStatus(SSP_SIM808 *const me, unsigned char pos)
 {
     (void)pos;
     
-    sendModResp_noArgs(evIPGprsAct);
+    sendModResp_noArgs(me, evIPStatus);
 }
 
 static void
-ipDone(unsigned char pos)
+ipGprsAct(SSP_SIM808 *const me, unsigned char pos)
 {
     (void)pos;
-
-    sendModResp_noArgs(evIP);
+    
+    sendModResp_noArgs(me, evIPGprsAct);
 }
 
 static void
-connecting(unsigned char pos)
+ipDone(SSP_SIM808 *const me, unsigned char pos)
 {
     (void)pos;
 
-    sendModResp_noArgs(evConnecting);
+    sendModResp_noArgs(me, evIP);
 }
 
 static void
-closed(unsigned char pos)
+connecting(SSP_SIM808 *const me, unsigned char pos)
 {
     (void)pos;
 
-    sendModResp_noArgs(evClosed);
+    sendModResp_noArgs(me, evConnecting);
 }
 
 static void
-connected(unsigned char pos)
+closed(SSP_SIM808 *const me, unsigned char pos)
 {
     (void)pos;
 
-    sendModResp_noArgs(evConnected);
+    sendModResp_noArgs(me, evClosed);
 }
 
 static void
-disconnected(unsigned char pos)
+connected(SSP_SIM808 *const me, unsigned char pos)
 {
     (void)pos;
 
-    sendModResp_noArgs(evDisconnected);
+    sendModResp_noArgs(me, evConnected);
+}
+
+static void
+disconnected(SSP_SIM808 *const me, unsigned char pos)
+{
+    (void)pos;
+
+    sendModResp_noArgs(me, evDisconnected);
 }
 
 void
-data_init(unsigned char c)
+data_init(SSP_SIM808 *const me, unsigned char c)
 {
     (void)c;
 
-    precv = ConMgr_ReceiveDataGetRef();
-    precv->size = 0;
-    prx = precv->buf;
+    me->precv = ConMgr_ReceiveDataGetRef();
+    me->precv->size = 0;
+    me->prx = me->precv->buf;
 }
 
 static void
-data_collect(unsigned char c)
+data_collect(SSP_SIM808 *const me, unsigned char c)
 {
-    *prx = c;
-    ++prx;
-    ++precv->size;
+    *(me->prx) = c;
+    ++(me->prx);
+    ++(me->precv->size);
 }
 
 static void
-data_ready(unsigned char pos)
+data_ready(SSP_SIM808 *const me, unsigned char pos)
 {
     (void)pos;
     
-    *prx = '\0'; 
-    precv->size -= (sizeof(END_OF_RECV_STR) - 1);
+    *(me->prx) = '\0';
+    me->precv->size -= (sizeof(END_OF_RECV_STR) - 1);
    
-    sendModResp_noArgs(evOk);
+    sendModResp_noArgs(me, evOk);
 }
 
 static void
-netClock_rcv(unsigned char pos)
+netClock_rcv(SSP_SIM808 *const me, unsigned char pos)
 {
     (void)pos;
     
-    sendModResp_noArgs(evNetClockSync);
+    sendModResp_noArgs(me, evNetClockSync);
 }
 
 static void
-lTimeInit(unsigned char pos)
+lTimeInit(SSP_SIM808 *const me, unsigned char pos)
 {
 	(void)pos;
 
-    plt = ltbuf;
-    *plt = '\0';
+    me->plt = me->ltbuf;
+    *(me->plt) = '\0';
 
-    lTime = &localTimeEvt.time;
+    me->lTime = &(me->localTimeEvt.time);
 }
 
 static void
-yearCollect(unsigned char c)
+yearCollect(SSP_SIM808 *const me, unsigned char c)
 {
-    if(plt >= ltbuf + LTBUFF_SIZE)
+    if(me->plt >= me->ltbuf + LTBUFF_SIZE)
         return;
 
-    *plt = c;
-    ++plt;
+    *(me->plt) = c;
+    ++(me->plt);
 }
 
 static void
-yearGet(unsigned char pos)
+yearGet(SSP_SIM808 *const me, unsigned char pos)
 {
 	(void)pos;
 
-    *plt = '\0';
+    *(me->plt) = '\0';
 
-    lTime->tm_year = (short)(YEAR2K + atoi(ltbuf));
+    me->lTime->tm_year = (short)(YEAR2K + atoi(me->ltbuf));
 
-    plt = ltbuf;
+    me->plt = me->ltbuf;
 }
 
 static void
-monthGet(unsigned char pos)
+monthGet(SSP_SIM808 *const me, unsigned char pos)
 {
 	(void)pos;
 
-    *plt = '\0';
+    *(me->plt) = '\0';
 
-    lTime->tm_mon = (unsigned char)atoi(ltbuf);
+    me->lTime->tm_mon = (unsigned char)atoi(me->ltbuf);
 
-    plt = ltbuf;
+    me->plt = me->ltbuf;
 }
 
 static void
-dayGet(unsigned char pos)
+dayGet(SSP_SIM808 *const me, unsigned char pos)
 {
 	(void)pos;
 
-    *plt = '\0';
+    *(me->plt) = '\0';
 
-    lTime->tm_mday = (unsigned char)atoi(ltbuf);
+    me->lTime->tm_mday = (unsigned char)atoi(me->ltbuf);
 
-    plt = ltbuf;
+    me->plt = me->ltbuf;
 }
 
 static void
-hourGet(unsigned char pos)
+hourGet(SSP_SIM808 *const me, unsigned char pos)
 {
 	(void)pos;
 
-    *plt = '\0';
+    *(me->plt) = '\0';
 
-    lTime->tm_hour = (unsigned char)atoi(ltbuf);
+    me->lTime->tm_hour = (unsigned char)atoi(me->ltbuf);
 
-    plt = ltbuf;
+    me->plt = me->ltbuf;
 }
 
 static void
-minGet(unsigned char pos)
+minGet(SSP_SIM808 *const me, unsigned char pos)
 {
 	(void)pos;
 
-    *plt = '\0';
+    *(me->plt) = '\0';
 
-    lTime->tm_min = (unsigned char)atoi(ltbuf);
+    me->lTime->tm_min = (unsigned char)atoi(me->ltbuf);
 
-    plt = ltbuf;
+    me->plt = me->ltbuf;
 }
 
 static void
-lTimeGet(unsigned char pos)
+lTimeGet(SSP_SIM808 *const me, unsigned char pos)
 {
 	(void)pos;
 
-    recCmdFlush();
+    recCmdFlush(me);
 
-    lTime->tm_sec = 30;
+    me->lTime->tm_sec = 30;
 
-    RKH_SET_STATIC_EVENT(RKH_UPCAST(RKH_EVT_T, &localTimeEvt), evResponse);
+    RKH_SET_STATIC_EVENT(RKH_UPCAST(RKH_EVT_T, &(me->localTimeEvt)), evResponse);
 
-    localTimeEvt.e.fwdEvt = evLocalTime;
+    me->localTimeEvt.e.fwdEvt = evLocalTime;
         
-    RKH_SMA_POST_FIFO(modMgr, RKH_UPCAST(RKH_EVT_T, &localTimeEvt),
+    RKH_SMA_POST_FIFO(me->modMgr, RKH_UPCAST(RKH_EVT_T, &(me->localTimeEvt)),
 						      &sim900parser);
 
 }
 
 static void
-imeiInit(unsigned char pos)
+imeiInit(SSP_SIM808 *const me, unsigned char pos)
 {
     (void)pos;
 
-    pImei = imeiEvt.buf;
+    me->pImei = me->imeiEvt.buf;
 }
 
 static void
-imeiCollect(unsigned char c)
+imeiCollect(SSP_SIM808 *const me, unsigned char c)
 {
-    if(pImei >= (imeiEvt.buf + sizeof(imeiEvt.buf) - 1))
-        return;
-    
-    *pImei = c;
-    ++pImei;
-}
-
-static void
-imeiSet(unsigned char pos)
-{
-	(void)pos;
-
-    recCmdFlush();
-
-    imeiEvt.buf[IMEI_LENGTH] = '\0';    
-
-    RKH_SET_STATIC_EVENT(RKH_UPCAST(RKH_EVT_T, &imeiEvt), evResponse);
-
-    imeiEvt.e.fwdEvt = evImei;
-        
-    RKH_SMA_POST_FIFO(modMgr, RKH_UPCAST(RKH_EVT_T, &imeiEvt),
-						      &sim900parser);
-}
-
-static void
-copsInit(unsigned char pos)
-{
-    (void)pos;
-
-    pCops = copsEvt.buf;
-}
-
-static void
-copsCollect(unsigned char c)
-{
-    if(pCops >= (copsEvt.buf + sizeof(copsEvt.buf) - 1))
+    if(me->pImei >= (me->imeiEvt.buf + sizeof(me->imeiEvt.buf) - 1))
         return;
     
-    *pCops = c;
-    ++pCops;
+    *(me->pImei) = c;
+    ++(me->pImei);
 }
 
 static void
-copsSet(unsigned char pos)
+imeiSet(SSP_SIM808 *const me, unsigned char pos)
 {
 	(void)pos;
 
-    recCmdFlush();
+    recCmdFlush(me);
 
-    *(pCops - 1) = '\0';
+    me->imeiEvt.buf[IMEI_LENGTH] = '\0';
 
-    RKH_SET_STATIC_EVENT(RKH_UPCAST(RKH_EVT_T, &copsEvt), evResponse);
+    RKH_SET_STATIC_EVENT(RKH_UPCAST(RKH_EVT_T, &(me->imeiEvt)), evResponse);
 
-    copsEvt.e.fwdEvt = evOper;
+    me->imeiEvt.e.fwdEvt = evImei;
         
-    RKH_SMA_POST_FIFO(modMgr, RKH_UPCAST(RKH_EVT_T, &copsEvt),
+    RKH_SMA_POST_FIFO(me->modMgr, RKH_UPCAST(RKH_EVT_T, &(me->imeiEvt)),
 						      &sim900parser);
 }
 
 static void
-csqInit(unsigned char pos)
+copsInit(SSP_SIM808 *const me, unsigned char pos)
 {
     (void)pos;
 
-    pcsq = csqBuf;
+    me->pCops = me->copsEvt.buf;
 }
 
 static void
-csqCollect(unsigned char c)
+copsCollect(SSP_SIM808 *const me, unsigned char c)
 {
-    if(pcsq >= (csqBuf + sizeof(csqBuf) - 1))
+    if(me->pCops >= (me->copsEvt.buf + sizeof(me->copsEvt.buf) - 1))
+        return;
+    
+    *(me->pCops) = c;
+    ++(me->pCops);
+}
+
+static void
+copsSet(SSP_SIM808 *const me, unsigned char pos)
+{
+	(void)pos;
+
+    recCmdFlush(me);
+
+    *(me->pCops - 1) = '\0';
+
+    RKH_SET_STATIC_EVENT(RKH_UPCAST(RKH_EVT_T, &(me->copsEvt)), evResponse);
+
+    me->copsEvt.e.fwdEvt = evOper;
+        
+    RKH_SMA_POST_FIFO(me->modMgr, RKH_UPCAST(RKH_EVT_T, &(me->copsEvt)),
+						      &sim900parser);
+}
+
+static void
+csqInit(SSP_SIM808 *const me, unsigned char pos)
+{
+    (void)pos;
+
+    me->pcsq = me->csqBuf;
+}
+
+static void
+csqCollect(SSP_SIM808 *const me, unsigned char c)
+{
+    if(me->pcsq >= (me->csqBuf + sizeof(me->csqBuf) - 1))
         return;
 
-    *pcsq = c;
-    ++pcsq;
+    *(me->pcsq) = c;
+    ++(me->pcsq);
 }
 
 static void
-csqSet(unsigned char pos)
+csqSet(SSP_SIM808 *const me, unsigned char pos)
 {
     (void)pos;
 
-    recCmdFlush();
+    recCmdFlush(me);
 
-    *pcsq = '\0';
-    sigLevelEvt.value = atoi(csqBuf);
+    *(me->pcsq) = '\0';
+    me->sigLevelEvt.value = atoi(me->csqBuf);
 
-    RKH_SET_STATIC_EVENT(RKH_UPCAST(RKH_EVT_T, &sigLevelEvt), evURC);
+    RKH_SET_STATIC_EVENT(RKH_UPCAST(RKH_EVT_T, &(me->sigLevelEvt)), evURC);
 
-    sigLevelEvt.e.fwdEvt = evSigLevel;
+    me->sigLevelEvt.e.fwdEvt = evSigLevel;
         
-    RKH_SMA_POST_FIFO(modMgr, RKH_UPCAST(RKH_EVT_T, &sigLevelEvt),
+    RKH_SMA_POST_FIFO(me->modMgr, RKH_UPCAST(RKH_EVT_T, &(me->sigLevelEvt)),
 						      &sim900parser);
 }
 
-static void dummy(unsigned char pos){
+static void dummy(SSP_SIM808 *const me, unsigned char pos){
     int i = 0;
 }
 
-static void init_end(unsigned char pos){
-    isURC = 1;
+static void init_end(SSP_SIM808 *const me, unsigned char pos){
+    me->isURC = 1;
 
-    sendModResp_noArgs(evInitEnd);
+    sendModResp_noArgs(me, evInitEnd);
 }
 
-
-//static GpsEvt gpsEvt;
-//static GpsData *gpsData;
-//static char gpsbuf[GPS_BUFF_SIZE];
-//static char *pgps;
-
-static void gpsInit(unsigned char pos){
+static void gpsInit(SSP_SIM808 *const me, unsigned char pos){
     (void)pos;
 
-    pgps = gpsbuf;
-    *pgps = '\0';
+    me->pgps = me->gpsbuf;
+    *(me->pgps) = '\0';
 
-    gpsData = &gpsEvt.gpsData;
+    me->gpsData = &(me->gpsEvt.gpsData);
 }
-static void gpsTimeCollect(unsigned char c){
-    if(pgps >= gpsbuf + GPS_BUFF_SIZE)
+static void gpsTimeCollect(SSP_SIM808 *const me, unsigned char c){
+    if(me->pgps >= me->gpsbuf + GPS_BUFF_SIZE)
         return;
 
-    *pgps = c;
-    ++pgps;
+    *(me->pgps) = c;
+    ++(me->pgps);
 }
-static void gpsTimeSet(unsigned char pos){
+static void gpsTimeSet(SSP_SIM808 *const me, unsigned char pos){
 
     (void)pos;
 
-    *pgps = '\0';
+    *(me->pgps) = '\0';
 
-    memcpy(gpsAuxbuf, gpsbuf, 2);
-    gpsAuxbuf[2]='\0';
-    gpsData->time.tm_hour = (unsigned char)atoi(gpsAuxbuf);
+    memcpy(me->gpsAuxbuf, me->gpsbuf, 2);
+    me->gpsAuxbuf[2]='\0';
+    me->gpsData->time.tm_hour = (unsigned char)atoi(me->gpsAuxbuf);
 
-    memcpy(gpsAuxbuf, gpsbuf + 2, 2);
-    gpsAuxbuf[2]='\0';
-    gpsData->time.tm_min = (unsigned char)atoi(gpsAuxbuf);
+    memcpy(me->gpsAuxbuf, me->gpsbuf + 2, 2);
+    me->gpsAuxbuf[2]='\0';
+    me->gpsData->time.tm_min = (unsigned char)atoi(me->gpsAuxbuf);
 
-    memcpy(gpsAuxbuf, gpsbuf + 4, 2);
-    gpsAuxbuf[2]='\0';
-    gpsData->time.tm_sec = (unsigned char)atoi(gpsAuxbuf);
+    memcpy(me->gpsAuxbuf, me->gpsbuf + 4, 2);
+    me->gpsAuxbuf[2]='\0';
+    me->gpsData->time.tm_sec = (unsigned char)atoi(me->gpsAuxbuf);
 
-    pgps = gpsbuf;
+    me->pgps = me->gpsbuf;
 }
-static void gpsStatusSet(unsigned char pos){
+static void gpsStatusSet(SSP_SIM808 *const me, unsigned char pos){
     (void)pos;
 
-    *pgps = '\0';
+    *(me->pgps) = '\0';
 
-    switch (gpsbuf[0]){
+    switch (me->gpsbuf[0]){
         case 'A':
-            gpsData->valid = RKH_TRUE;
+            me->gpsData->valid = RKH_TRUE;
             break;
         case 'V':
         default:
-            gpsData->valid = RKH_FALSE;
+            me->gpsData->valid = RKH_FALSE;
             break;
     }
 
-    pgps = gpsbuf;
+    me->pgps = me->gpsbuf;
 }
-static void gpsLatitudeSet(unsigned char pos){
+static void gpsLatitudeSet(SSP_SIM808 *const me, unsigned char pos){
     (void)pos;
 
-    *pgps = '\0';
+    *(me->pgps) = '\0';
 
-    memcpy(gpsAuxbuf, gpsbuf, 2);
-    gpsAuxbuf[2]='\0';
-    gpsData->latitude_deg = (unsigned char)atoi(gpsAuxbuf);
+    memcpy(me->gpsAuxbuf, me->gpsbuf, 2);
+    me->gpsAuxbuf[2]='\0';
+    me->gpsData->latitude_deg = (unsigned char)atoi(me->gpsAuxbuf);
 
-    strcpy(gpsAuxbuf, gpsbuf + 2);
-    gpsData->latitude_min = (float)atof(gpsAuxbuf);
+    strcpy(me->gpsAuxbuf, me->gpsbuf + 2);
+    me->gpsData->latitude_min = (float)atof(me->gpsAuxbuf);
 
-    pgps = gpsbuf;
+    me->pgps = me->gpsbuf;
 }
-static void gpsLatitudeIndicatorSet(unsigned char pos){
+static void gpsLatitudeIndicatorSet(SSP_SIM808 *const me, unsigned char pos){
     (void)pos;
 
-    *pgps = '\0';
+    *(me->pgps) = '\0';
 
-    switch (gpsbuf[0]){
+    switch (me->gpsbuf[0]){
         case 'N':
-            gpsData->latitude_north = RKH_TRUE;
+            me->gpsData->latitude_north = RKH_TRUE;
             break;
         case 'S':
         default:
-            gpsData->latitude_north = RKH_FALSE;
+            me->gpsData->latitude_north = RKH_FALSE;
             break;
     }
 
-    pgps = gpsbuf;
+    me->pgps = me->gpsbuf;
 }
-static void gpsLongitudeSet(unsigned char pos){
+static void gpsLongitudeSet(SSP_SIM808 *const me, unsigned char pos){
     (void)pos;
 
-    *pgps = '\0';
+    *(me->pgps) = '\0';
 
-    memcpy(gpsAuxbuf, gpsbuf, 2);
-    gpsAuxbuf[2]='\0';
-    gpsData->longitude_deg = (unsigned char)atoi(gpsAuxbuf);
+    memcpy(me->gpsAuxbuf, me->gpsbuf, 2);
+    me->gpsAuxbuf[2]='\0';
+    me->gpsData->longitude_deg = (unsigned char)atoi(me->gpsAuxbuf);
 
-    strcpy(gpsAuxbuf, gpsbuf + 2);
-    gpsData->longitude_min = (float)atof(gpsAuxbuf);
+    strcpy(me->gpsAuxbuf, me->gpsbuf + 2);
+    me->gpsData->longitude_min = (float)atof(me->gpsAuxbuf);
 
-    pgps = gpsbuf;
+    me->pgps = me->gpsbuf;
 }
-static void gpsLongitudeIndicatorSet(unsigned char pos){
+static void gpsLongitudeIndicatorSet(SSP_SIM808 *const me, unsigned char pos){
     (void)pos;
 
-    *pgps = '\0';
+    *(me->pgps) = '\0';
 
-    switch (gpsbuf[0]){
+    switch (me->gpsbuf[0]){
         case 'E':
-            gpsData->longitude_east = RKH_TRUE;
+            me->gpsData->longitude_east = RKH_TRUE;
             break;
         case 'W':
         default:
-            gpsData->longitude_east = RKH_FALSE;
+            me->gpsData->longitude_east = RKH_FALSE;
             break;
     }
 
-    pgps = gpsbuf;
+    me->pgps = me->gpsbuf;
 }
-static void gpsSpeedSet(unsigned char pos){
+static void gpsSpeedSet(SSP_SIM808 *const me, unsigned char pos){
     (void)pos;
 
-    *pgps = '\0';
+    *(me->pgps) = '\0';
 
-    gpsData->speed = (float)atof(gpsbuf);
+    me->gpsData->speed = (float)atof(me->gpsbuf);
 
-    pgps = gpsbuf;
+    me->pgps = me->gpsbuf;
 }
-static void gpsCourseSet(unsigned char pos){
+static void gpsCourseSet(SSP_SIM808 *const me, unsigned char pos){
     (void)pos;
 
-    *pgps = '\0';
+    *(me->pgps) = '\0';
 
-    gpsData->course = (float)atof(gpsbuf);
+    me->gpsData->course = (float)atof(me->gpsbuf);
 
-    pgps = gpsbuf;
+    me->pgps = me->gpsbuf;
 }
-static void gpsDateSet(unsigned char pos){
+static void gpsDateSet(SSP_SIM808 *const me, unsigned char pos){
     (void)pos;
 
-    *pgps = '\0';
+    *(me->pgps) = '\0';
 
-    memcpy(gpsAuxbuf, gpsbuf, 2);
-    gpsAuxbuf[2]='\0';
-    gpsData->time.tm_mday = (unsigned char)atoi(gpsAuxbuf);
+    memcpy(me->gpsAuxbuf, me->gpsbuf, 2);
+    me->gpsAuxbuf[2]='\0';
+    me->gpsData->time.tm_mday = (unsigned char)atoi(me->gpsAuxbuf);
 
-    memcpy(gpsAuxbuf, gpsbuf + 2, 2);
-    gpsAuxbuf[2]='\0';
-    gpsData->time.tm_mon = (unsigned char)atoi(gpsAuxbuf);
+    memcpy(me->gpsAuxbuf, me->gpsbuf + 2, 2);
+    me->gpsAuxbuf[2]='\0';
+    me->gpsData->time.tm_mon = (unsigned char)atoi(me->gpsAuxbuf);
 
-    memcpy(gpsAuxbuf, gpsbuf + 4, 2);
-    gpsAuxbuf[2]='\0';
-    gpsData->time.tm_year = (short)(YEAR2K + atoi(gpsAuxbuf));
+    memcpy(me->gpsAuxbuf, me->gpsbuf + 4, 2);
+    me->gpsAuxbuf[2]='\0';
+    me->gpsData->time.tm_year = (short)(YEAR2K + atoi(me->gpsAuxbuf));
 
-    pgps = gpsbuf;
+    me->pgps = me->gpsbuf;
 }
-static void gpsSet(unsigned char pos)
+static void gpsSet(SSP_SIM808 *const me, unsigned char pos)
 {
     (void)pos;
 
-    recCmdFlush();
+    recCmdFlush(me);
 
-    RKH_SET_STATIC_EVENT(RKH_UPCAST(RKH_EVT_T, &gpsEvt), evURC);
+    RKH_SET_STATIC_EVENT(RKH_UPCAST(RKH_EVT_T, &(me->gpsEvt)), evURC);
 
-    gpsEvt.e.fwdEvt = evGps;
+    me->gpsEvt.e.fwdEvt = evGps;
 
-    RKH_SMA_POST_FIFO(modMgr, RKH_UPCAST(RKH_EVT_T, &gpsEvt),
+    RKH_SMA_POST_FIFO(me->modMgr, RKH_UPCAST(RKH_EVT_T, &(me->gpsEvt)),
                       &sim900parser);
 }
 
-void recCmdCollect(unsigned char c){
-    if(recCmdNext == NULL){
-        recCmdNext = recCmdBuf;
+void recCmdCollect(SSP_SIM808 *const me, unsigned char c){
+    if(me->recCmdNext == NULL){
+        me->recCmdNext = me->recCmdBuf;
     }
-    if(recCmdNext >= (recCmdBuf + sizeof(recCmdBuf) - 1))
+    if(me->recCmdNext >= (me->recCmdBuf + sizeof(me->recCmdBuf) - 1))
         return;
 
-    *recCmdNext = c;
-    ++recCmdNext;
+    *(me->recCmdNext) = c;
+    ++(me->recCmdNext);
 }
 
-void recCmdFlushC(unsigned char c){
-    recCmdFlush();
+void recCmdFlushC(SSP_SIM808 *const me, unsigned char c){
+    recCmdFlush(me);
 }
 
-void recCmdFlush(){
+void recCmdFlush(SSP_SIM808 *const me){
 
-    *recCmdNext = '\0';
+    *(me->recCmdNext) = '\0';
 
-    char * a = recCmdBuf
+    char * a = me->recCmdBuf
 
     RKH_TRC_USR_BEGIN(USR_TRACE_IN)
-        RKH_TUSR_STR(recCmdBuf);
+        RKH_TUSR_STR(me->recCmdBuf);
     RKH_TRC_USR_END();
 
-    recCmdNext = recCmdBuf;
+    me->recCmdNext = me->recCmdBuf;
 
 }
 
 /* ---------------------------- Global functions --------------------------- */
+void sim808parser_doSearch(SSP* parser, unsigned char c)
+{
+    recCmdCollect(RKH_DOWNCAST(SSP_SIM808,parser), c);
+    ssp_doSearch(parser, c);
+}
+SSP * sim808parser_getSSP(enum SIM_808_PARSER_INDEX index){
+    switch (index){
+        case SIM_808_PARSER_A_INDEX:
+            return RKH_UPCAST(SSP,&sim808AParser);
+        case SIM_808_PARSER_B_INDEX:
+            return RKH_UPCAST(SSP,&sim808BParser);
+        default:
+            break;
+    }
+    return NULL;
+}
+SSP * sim808parser_initSSP(enum SIM_808_PARSER_INDEX index, RKH_SMA_T* modMgr){
+    SSP_SIM808 * result = NULL;
+    switch (index){
+        case SIM_808_PARSER_A_INDEX:
+            result = &sim808AParser;
+            break;
+        case SIM_808_PARSER_B_INDEX:
+            result = &sim808BParser;
+            break;
+        default:
+            break;
+    }
+    if(result != NULL){
+        result->modMgr = modMgr;
+    }
+    return RKH_UPCAST(SSP,result);
+}
+
 /* ------------------------------ End of file ------------------------------ */

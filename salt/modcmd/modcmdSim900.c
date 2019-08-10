@@ -64,8 +64,6 @@ struct CmdTbl
 
 /* ---------------------------- Global variables --------------------------- */
 /* ---------------------------- Local variables ---------------------------- */
-static SSP sim900Parser;
-
 static const CmdTbl cmdTbl =
 {
     {RKH_INIT_STATIC_EVT(evCmd), 
@@ -198,15 +196,14 @@ static const CmdTbl cmdTbl =
 
 /* ----------------------- Local function prototypes ----------------------- */
 /* ---------------------------- Local functions ---------------------------- */
-static void
-doSearch(unsigned char c)
-{
-    recCmdCollect(c);
-    ssp_doSearch(&sim900Parser, c);
-}
 
 static void
-postFIFOEvtCmd(ModMgrEvt *pe, const ModCmd *pc, unsigned char *data, ruint nData)
+doSearch(SSP* ssp, unsigned char c)
+{
+    sim808parser_doSearch(ssp, c);
+}
+
+postFIFOEvtCmd(RKH_SMA_T* ao, ModMgrEvt *pe, const ModCmd *pc, unsigned char *data, ruint nData)
 {
     pe->data = data;
     pe->nData = nData;
@@ -215,11 +212,11 @@ postFIFOEvtCmd(ModMgrEvt *pe, const ModCmd *pc, unsigned char *data, ruint nData
     pe->args.waitResponseTime = pc->waitResponseTime;
     pe->args.interCmdTime = pc->interCmdTime;
 
-    RKH_SMA_POST_FIFO(modMgr, RKH_UPCAST(RKH_EVT_T, pe), *pc->aoDest);
+    RKH_SMA_POST_FIFO(ao, RKH_UPCAST(RKH_EVT_T, pe), *pc->aoDest);
 }
 
 static void
-sendModCmd_noArgs(const ModCmd *p)
+sendModCmd_noArgs(RKH_SMA_T* ao, const ModCmd *p)
 {
     ModMgrEvt *evtCmd;
 
@@ -227,11 +224,11 @@ sendModCmd_noArgs(const ModCmd *p)
 
     strncpy(evtCmd->cmd, p->fmt, MODMGR_MAX_SIZEOF_CMDSTR);
 
-    postFIFOEvtCmd(evtCmd, p, NULL, 0);
+    postFIFOEvtCmd(ao, evtCmd, p, NULL, 0);
 }
 
 static void
-sendModCmd_rui16(const ModCmd *p, rui16_t arg)
+sendModCmd_rui16(RKH_SMA_T* ao, const ModCmd *p, rui16_t arg)
 {
     ModMgrEvt *evtCmd;
 
@@ -239,11 +236,11 @@ sendModCmd_rui16(const ModCmd *p, rui16_t arg)
 
     snprintf(evtCmd->cmd, MODMGR_MAX_SIZEOF_CMDSTR, p->fmt, arg);
 
-    postFIFOEvtCmd(evtCmd, p, NULL, 0);
+    postFIFOEvtCmd(ao, evtCmd, p, NULL, 0);
 }
 
 static void
-sendModCmd_3StrArgs(const ModCmd *p, char *s1, char *s2, char *s3)
+sendModCmd_3StrArgs(RKH_SMA_T* ao, const ModCmd *p, char *s1, char *s2, char *s3)
 {
     ModMgrEvt *evtCmd;
 
@@ -251,131 +248,131 @@ sendModCmd_3StrArgs(const ModCmd *p, char *s1, char *s2, char *s3)
     
     snprintf(evtCmd->cmd, MODMGR_MAX_SIZEOF_CMDSTR, p->fmt, s1, s2, s3);
 
-    postFIFOEvtCmd(evtCmd, p, NULL, 0);
+    postFIFOEvtCmd(ao, evtCmd, p, NULL, 0);
 }
 
 /* ---------------------------- Global functions --------------------------- */
 ModCmdRcvHandler
-ModCmd_init(void)
+ModCmd_init(SSP* parser)
 {
     RKH_SR_ALLOC();
 
     RKH_ENTER_CRITICAL_();
-  	ssp_init(&sim900Parser, &rootCmdParser);
+  	ssp_init(parser, &rootCmdParser);
     RKH_EXIT_CRITICAL_();
     return &doSearch;
 }
 
 void 
-ModCmd_sync(void)
+ModCmd_sync(RKH_SMA_T* ao)
 {
-    sendModCmd_noArgs(&cmdTbl.sync);
+    sendModCmd_noArgs(ao, &cmdTbl.sync);
 }
 
 void 
-ModCmd_initStr(void)
+ModCmd_initStr(RKH_SMA_T* ao)
 {
-    sendModCmd_noArgs(&cmdTbl.initStr);
+    sendModCmd_noArgs(ao, &cmdTbl.initStr);
 }
 
 void 
-ModCmd_getPinStatus(void)
+ModCmd_getPinStatus(RKH_SMA_T* ao)
 {
-    sendModCmd_noArgs(&cmdTbl.getPinStatus);
+    sendModCmd_noArgs(ao, &cmdTbl.getPinStatus);
 }
 
 void 
-ModCmd_setPin(rui16_t pin)
+ModCmd_setPin(RKH_SMA_T* ao, rui16_t pin)
 {
-    sendModCmd_rui16(&cmdTbl.setPin, pin);
+    sendModCmd_rui16(ao, &cmdTbl.setPin, pin);
 }
 
 void 
-ModCmd_getRegStatus(void)
+ModCmd_getRegStatus(RKH_SMA_T* ao)
 {
-    sendModCmd_noArgs(&cmdTbl.getRegStatus);
+    sendModCmd_noArgs(ao, &cmdTbl.getRegStatus);
 }
 
 void 
-ModCmd_enableNetTime(void)
+ModCmd_enableNetTime(RKH_SMA_T* ao)
 {
-    sendModCmd_noArgs(&cmdTbl.enableNetTime);
+    sendModCmd_noArgs(ao, &cmdTbl.enableNetTime);
 }
 
 void 
-ModCmd_getImei(void)
+ModCmd_getImei(RKH_SMA_T* ao)
 {
-    sendModCmd_noArgs(&cmdTbl.getImei);
+    sendModCmd_noArgs(ao, &cmdTbl.getImei);
 }
 
 void 
-ModCmd_cipShutdown(void)
+ModCmd_cipShutdown(RKH_SMA_T* ao)
 {
-    sendModCmd_noArgs(&cmdTbl.cipShutdown);
+    sendModCmd_noArgs(ao, &cmdTbl.cipShutdown);
 }
 
 void 
-ModCmd_setManualGet(void)
+ModCmd_setManualGet(RKH_SMA_T* ao)
 {
-    sendModCmd_noArgs(&cmdTbl.setManualGet);
+    sendModCmd_noArgs(ao, &cmdTbl.setManualGet);
 }
 
 void 
-ModCmd_getLocalTime(void)
+ModCmd_getLocalTime(RKH_SMA_T* ao)
 {
-    sendModCmd_noArgs(&cmdTbl.getLocalTime);
+    sendModCmd_noArgs(ao, &cmdTbl.getLocalTime);
 }
 
 void 
-ModCmd_getOper(void)
+ModCmd_getOper(RKH_SMA_T* ao)
 {
-    sendModCmd_noArgs(&cmdTbl.getOper);
+    sendModCmd_noArgs(ao, &cmdTbl.getOper);
 }
 
 void 
-ModCmd_setupAPN(char *apn, char *usr, char *nm)
+ModCmd_setupAPN(RKH_SMA_T* ao, char *apn, char *usr, char *nm)
 {
-    sendModCmd_3StrArgs(&cmdTbl.setAPN, apn, usr, nm);
+    sendModCmd_3StrArgs(ao, &cmdTbl.setAPN, apn, usr, nm);
 }
 
 void 
-ModCmd_startGPRS(void)
+ModCmd_startGPRS(RKH_SMA_T* ao)
 {
-    sendModCmd_noArgs(&cmdTbl.startGPRS);
+    sendModCmd_noArgs(ao, &cmdTbl.startGPRS);
 }
 
 void 
-ModCmd_requestIP(void)
+ModCmd_requestIP(RKH_SMA_T* ao)
 {
-    sendModCmd_noArgs(&cmdTbl.requestIP);
+    sendModCmd_noArgs(ao, &cmdTbl.requestIP);
 }
 
 void 
-ModCmd_getConnStatus(void)
+ModCmd_getConnStatus(RKH_SMA_T* ao)
 {
-    sendModCmd_noArgs(&cmdTbl.getConnStatus);
+    sendModCmd_noArgs(ao, &cmdTbl.getConnStatus);
 }
 
 void 
-ModCmd_connect(char *prot, char *dmn, char *port)
+ModCmd_connect(RKH_SMA_T* ao, char *prot, char *dmn, char *port)
 {
-    sendModCmd_3StrArgs(&cmdTbl.connect, prot, dmn, port);
+    sendModCmd_3StrArgs(ao, &cmdTbl.connect, prot, dmn, port);
 }
 
 void 
-ModCmd_disconnect(void)
+ModCmd_disconnect(RKH_SMA_T* ao)
 {
-    sendModCmd_noArgs(&cmdTbl.disconnect);
+    sendModCmd_noArgs(ao, &cmdTbl.disconnect);
 }
 
 void
-ModCmd_sendDataRequest(rui16_t len)
+ModCmd_sendDataRequest(RKH_SMA_T* ao, rui16_t len)
 {
-    sendModCmd_rui16(&cmdTbl.sendDataRequest, len);
+    sendModCmd_rui16(ao, &cmdTbl.sendDataRequest, len);
 }
 
 void
-ModCmd_sendData(unsigned char *buf, ruint size)
+ModCmd_sendData(RKH_SMA_T* ao, unsigned char *buf, ruint size)
 {
     ModMgrEvt *evtCmd;
     const ModCmd *p;
@@ -387,35 +384,35 @@ ModCmd_sendData(unsigned char *buf, ruint size)
     evtCmd->data = buf;
     evtCmd->nData = size;
 
-    postFIFOEvtCmd(evtCmd, p, buf, size);
+    postFIFOEvtCmd(ao, evtCmd, p, buf, size);
 }
 
 void
-ModCmd_readData(void)
+ModCmd_readData(RKH_SMA_T* ao)
 {
-    sendModCmd_noArgs(&cmdTbl.readData);
+    sendModCmd_noArgs(ao, &cmdTbl.readData);
 }
 
 char *
-ModCmd_endOfXmitStr(void)
+ModCmd_endOfXmitStr()
 {
     return (char *)cmdTbl.sendData.fmt;
 }
 
-void ModCmd_errorReport(void){
-    sendModCmd_noArgs(&cmdTbl.errorReport);
+void ModCmd_errorReport(RKH_SMA_T* ao){
+    sendModCmd_noArgs(ao, &cmdTbl.errorReport);
 }
 
 void
-ModCmd_startGPS(void)
+ModCmd_startGPS(RKH_SMA_T* ao)
 {
-    sendModCmd_noArgs(&cmdTbl.gpsPowerOn);
+    sendModCmd_noArgs(ao, &cmdTbl.gpsPowerOn);
 }
 
 void
-ModCmd_getGPS(void)
+ModCmd_getGPS(RKH_SMA_T* ao)
 {
-    sendModCmd_noArgs(&cmdTbl.gpsGet);
+    sendModCmd_noArgs(ao, &cmdTbl.gpsGet);
 }
 
 /* ------------------------------ End of file ------------------------------ */

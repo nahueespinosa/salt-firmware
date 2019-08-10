@@ -28,6 +28,7 @@
 #include "signals.h"
 #include "rtime.h"
 #include "bsp.h"
+#include "sim900parser.h"
 
 /* ----------------------------- Local macros ------------------------------ */
 #define SIZEOF_QDEFER   1
@@ -441,6 +442,8 @@ struct ConMgr
     char Imei[IMEI_BUF_SIZE];
     char Oper[OPER_BUF_SIZE];
 
+    RKH_SMA_T* modMgr;
+    enum SIM_808_PARSER_INDEX parser_index;
     GpsDataCallback gpsDataCallback;
 };
 
@@ -457,7 +460,7 @@ typedef struct Operator
     Apn apn;
 }Operator;
 
-RKH_SMA_CREATE(ConMgr, conMgr, 1, HCAL, &ConMgr_inactive, init, NULL);
+RKH_SMA_CREATE(ConMgr, conMgr, CON_MGR_PRIORITY, HCAL, &ConMgr_inactive, init, NULL);
 RKH_SMA_DEF_PTR(conMgr);
 
 /* ------------------------------- Constants ------------------------------- */
@@ -618,6 +621,8 @@ init(ConMgr *const me, RKH_EVT_T *pe)
     me->retryCount = 0;
 
     me->gpsDataCallback = defGpsCallback;
+    me->parser_index = SIM_808_PARSER_A_INDEX;
+    me->modMgr = MOD_MGR_A;
 }
 
 /* ............................ Effect actions ............................. */
@@ -627,7 +632,7 @@ open(ConMgr *const me, RKH_EVT_T *pe)
     (void)pe;
     (void)me;
 
-    RKH_SMA_POST_FIFO(modMgr, &e_Open, conMgr);
+    RKH_SMA_POST_FIFO(me->modMgr, &e_Open, conMgr);
 
     modPwr_on();
 }
@@ -638,7 +643,7 @@ close(ConMgr *const me, RKH_EVT_T *pe)
     (void)pe;
     (void)me;
 
-    RKH_SMA_POST_FIFO(modMgr, &e_Close, conMgr);
+    RKH_SMA_POST_FIFO(me->modMgr, &e_Close, conMgr);
 
     modPwr_off();
 }
@@ -701,7 +706,7 @@ checkRegStatus(ConMgr *const me, RKH_EVT_T *pe)
     (void)me;
     (void)pe;
 
-    ModCmd_getRegStatus();
+    ModCmd_getRegStatus(me->modMgr);
 }
 
 static void
@@ -719,7 +724,7 @@ localTimeGet(ConMgr *const me, RKH_EVT_T *pe)
 	(void)me;
 	(void)pe;
 
-    ModCmd_getLocalTime();
+    ModCmd_getLocalTime(me->modMgr);
 }
 
 static void 
@@ -744,7 +749,7 @@ configTry(ConMgr *const me, RKH_EVT_T *pe)
     (void)pe;
 
     ++me->retryCount;
-	ModCmd_init();
+	ModCmd_init(sim808parser_getSSP(me->parser_index));
 }
 
 static void 
@@ -753,7 +758,7 @@ requestIp(ConMgr *const me, RKH_EVT_T *pe)
     (void)pe;
     (void)me;
 
-    ModCmd_requestIP();
+    ModCmd_requestIP(me->modMgr);
 }
 
 static void
@@ -778,7 +783,7 @@ socketOpen(ConMgr *const me, RKH_EVT_T *pe)
     (void)me;
     (void)pe;
 
-    ModCmd_connect(CONNECTION_PROT, CONNECTION_DOMAIN, CONNECTION_PORT);
+    ModCmd_connect(me->modMgr, CONNECTION_PROT, CONNECTION_DOMAIN, CONNECTION_PORT);
 }
 
 static void
@@ -787,7 +792,7 @@ socketClose(ConMgr *const me, RKH_EVT_T *pe)
     (void)me;
     (void)pe;
 
-    ModCmd_disconnect();
+    ModCmd_disconnect(me->modMgr);
 }
 
 static void 
@@ -797,7 +802,7 @@ readData(ConMgr *const me, RKH_EVT_T *pe)
     (void)me;
 
     RKH_SET_STATIC_EVENT(RKH_UPCAST(RKH_EVT_T, &e_Received), evReceived);
-    ModCmd_readData();
+    ModCmd_readData(me->modMgr);
 }
 
 static void
@@ -807,7 +812,7 @@ sendRequest(ConMgr *const me, RKH_EVT_T *pe)
 
     me->psend = RKH_UPCAST(SendEvt, pe);
 
-    ModCmd_sendDataRequest((rui16_t)(me->psend->size));
+    ModCmd_sendDataRequest(me->modMgr, (rui16_t)(me->psend->size));
 }
 
 static void
@@ -815,7 +820,7 @@ flushData(ConMgr *const me, RKH_EVT_T *pe)
 {
     (void)pe;
 
-    ModCmd_sendData(me->psend->buf, me->psend->size);
+    ModCmd_sendData(me->modMgr, me->psend->buf, me->psend->size);
 }
 
 static void
@@ -845,7 +850,7 @@ sendFail(ConMgr *const me, RKH_EVT_T *pe)
     (void)me;
 
     RKH_SMA_POST_FIFO(mqttProt, &e_SendFail, conMgr);
-	ModCmd_init();
+	ModCmd_init(sim808parser_getSSP(me->parser_index));
 }
 
 static void
@@ -855,7 +860,7 @@ recvFail(ConMgr *const me, RKH_EVT_T *pe)
     (void)me;
 
     RKH_SMA_POST_FIFO(mqttProt, &e_RecvFail, conMgr);
-	ModCmd_init();
+	ModCmd_init(sim808parser_getSSP(me->parser_index));
 }
 
 static void
@@ -864,7 +869,7 @@ tryGetStatus(ConMgr *const me, RKH_EVT_T *pe)
     (void)pe;
 
     ++me->retryCount;
-	ModCmd_init();
+	ModCmd_init(sim808parser_getSSP(me->parser_index));
 }
 
 static void
@@ -885,7 +890,7 @@ sendSync(ConMgr *const me)
 {
     ++me->retryCount;
 
-    ModCmd_sync();
+    ModCmd_sync(me->modMgr);
 }
 
 static void
@@ -893,7 +898,7 @@ sendInit(ConMgr *const me)
 {
     (void)me;
 
-    ModCmd_initStr();
+    ModCmd_initStr(me->modMgr);
 }
 
 static void
@@ -901,7 +906,7 @@ checkPin(ConMgr *const me)
 {
     (void)me;
 
-    ModCmd_getPinStatus();
+    ModCmd_getPinStatus(me->modMgr);
 }
 
 static void
@@ -909,7 +914,7 @@ setPin(ConMgr *const me)
 {
     (void)me;
 
-    ModCmd_setPin(SIM_PIN_NUMBER);
+    ModCmd_setPin(me->modMgr, SIM_PIN_NUMBER);
 }
 
 static void
@@ -917,7 +922,7 @@ netTimeEnable(ConMgr *const me)
 {
     (void)me;
 
-    ModCmd_enableNetTime();
+    ModCmd_enableNetTime(me->modMgr);
 }
 
 static void
@@ -925,7 +930,7 @@ getImei(ConMgr *const me)
 {
     (void)me;
 
-    ModCmd_getImei();
+    ModCmd_getImei(me->modMgr);
 }
 
 static void
@@ -933,13 +938,13 @@ cipShutdown(ConMgr *const me)
 {
     (void)me;
 
-    ModCmd_cipShutdown();
+    ModCmd_cipShutdown(me->modMgr);
 }
 
 static void 
 unregEntry(ConMgr *const me)
 {
-    ModCmd_getRegStatus();
+    ModCmd_getRegStatus(me->modMgr);
 
     RKH_SET_STATIC_EVENT(&e_tout, evTimeout);
     RKH_TMR_ONESHOT(&me->timer, RKH_UPCAST(RKH_SMA_T, me), CHECK_REG_PERIOD);
@@ -975,7 +980,7 @@ setupManualGet(ConMgr *const me)
 {
     (void)me;
 
-    ModCmd_setManualGet();
+    ModCmd_setManualGet(me->modMgr);
 }
    
 static void
@@ -990,7 +995,7 @@ getOper(ConMgr *const me)
 {
     (void)me;
 
-    ModCmd_getOper();
+    ModCmd_getOper(me->modMgr);
 }
    
 static void
@@ -1000,7 +1005,7 @@ setupAPN(ConMgr *const me)
     (void)me;
 
     apn = getAPNbyOper(me->Oper);
-    ModCmd_setupAPN(apn->addr, apn->usr, apn->psw);
+    ModCmd_setupAPN(me->modMgr, apn->addr, apn->usr, apn->psw);
 }
    
 static void
@@ -1008,7 +1013,7 @@ startGPRS(ConMgr *const me)
 {
     (void)me;
 
-    ModCmd_startGPRS();
+    ModCmd_startGPRS(me->modMgr);
 }
 
 static void
@@ -1016,7 +1021,7 @@ getConnStatus(ConMgr *const me)
 {
     (void)me;
 
-    ModCmd_getConnStatus();
+    ModCmd_getConnStatus(me->modMgr);
 }
 
 static void
@@ -1082,19 +1087,19 @@ setInitTimeOut(ConMgr *const me)
 static void
 errorReport(ConMgr *const me)
 {
-    ModCmd_errorReport();
+    ModCmd_errorReport(me->modMgr);
 }
 
 static void
 initGps(ConMgr *const me)
 {
-    ModCmd_startGPS();
+    ModCmd_startGPS(me->modMgr);
 }
 
 static void
 getGps(ConMgr *const me)
 {
-    ModCmd_getGPS();
+    ModCmd_getGPS(me->modMgr);
 }
 
 
@@ -1124,7 +1129,7 @@ failureExit(ConMgr *const me)
     (void)me;
 
     modPwr_on();
-    ModCmd_init();
+    ModCmd_init(sim808parser_getSSP(me->parser_index));
     rkh_tmr_stop(&me->timer);
 }
 
@@ -1141,7 +1146,7 @@ waitRetryConnExit(ConMgr *const me)
 {
     (void)me;
 
-    ModCmd_init();
+    ModCmd_init(sim808parser_getSSP(me->parser_index));
     rkh_tmr_stop(&me->timer);
 }
 

@@ -23,6 +23,7 @@
 #include "conmgr.h"
 #include "bsp.h"
 #include "serial.h"
+#include "saltCfg.h"
 
 /* ----------------------------- Local macros ------------------------------ */
 #define SIZEOF_QDEFER   4
@@ -109,15 +110,21 @@ struct ModMgr
                                intercmd delay */
     ModMgrEvt *pCmd;        /* stores a reference to current command */
 
-    ModMgrChannelOpen channelOpen;
-    ModMgrChannelClose channelClose;
-    ModMgrChannelPuts channelPuts;
-    ModMgrChannelPutnchar channelPutnchar;
+    RKH_QUEUE_T qDefer;
+    ModMgrEvt *qDefer_sto[SIZEOF_QDEFER];
+
+    enum MOD_MGR_INDEX index;
 };
 
-RKH_SMA_CREATE(ModMgr, modMgr, 0, HCAL, &ModMgr_inactive, initialization, 
-               NULL);
-RKH_SMA_DEF_PTR(modMgr);
+RKH_SMA_CREATE(ModMgr, modMgrA, MOD_MGR_A_PRIORITY, HCAL, &ModMgr_inactive, initialization, NULL);
+RKH_SMA_DEF_PTR(modMgrA);
+RKH_SMA_CREATE(ModMgr, modMgrB, MOD_MGR_B_PRIORITY, HCAL, &ModMgr_inactive, initialization, NULL);
+RKH_SMA_DEF_PTR(modMgrB);
+
+RKH_ARRAY_SMA_CREATE(modMgrs, NUM_MOD_MGR)
+        {
+                &modMgrA, &modMgrB,
+        };
 
 /* ------------------------------- Constants ------------------------------- */
 /* ---------------------------- Local data types --------------------------- */
@@ -125,15 +132,13 @@ RKH_SMA_DEF_PTR(modMgr);
 /* ---------------------------- Local variables ---------------------------- */
 static RKH_STATIC_EVENT(e_tout, evToutWaitResponse);
 static RKH_STATIC_EVENT(e_noResp, evNoResponse);
-static RKH_QUEUE_T qDefer;
-static ModMgrEvt *qDefer_sto[SIZEOF_QDEFER];
 
 /* ----------------------- Local function prototypes ----------------------- */
-static void forwardModMgrEvt(RKH_SMA_T *ao, RKH_EVT_T *pe);
+static void forwardModMgrEvt(ModMgr * me, RKH_SMA_T *ao, RKH_EVT_T *pe);
 
 /* ---------------------------- Local functions ---------------------------- */
 static void
-forwardModMgrEvt(RKH_SMA_T *ao, RKH_EVT_T *pe)
+forwardModMgrEvt(ModMgr * me, RKH_SMA_T *ao, RKH_EVT_T *pe)
 {
     ModMgrResp *presp;
 
@@ -147,34 +152,12 @@ forwardModMgrEvt(RKH_SMA_T *ao, RKH_EVT_T *pe)
         RKH_TUSR_STR(dump);
     RKH_TRC_USR_END();
 
-    RKH_SMA_POST_FIFO(ao, RKH_UPCAST(RKH_EVT_T, presp), modMgr);
+    RKH_SMA_POST_FIFO(ao, RKH_UPCAST(RKH_EVT_T, presp), me);
 }
 
 
 
 /* ............................ Initial action ............................. */
-
-
-static void sim808AChannelOpen(){
-
-}
-
-static void sim808AChannelClose(){
-
-}
-
-static void sim808APuts(char *p){
-#ifdef DEBUG_SERIAL_PASS
-    serialPutByte(UART_DEBUG,'#');
-    serialPutString(UART_DEBUG,p);
-    serialPutByte(UART_DEBUG,'#');
-#endif
-    serialPutString(UART_SIM_808_A, p);
-}
-
-static void sim808APutnchar(unsigned char *p, ruint ndata){
-    serialPutChars(UART_SIM_808_A, p, ndata);
-}
 
 static void
 initialization(ModMgr *const me, RKH_EVT_T *pe)
@@ -201,17 +184,20 @@ initialization(ModMgr *const me, RKH_EVT_T *pe)
     RKH_TR_FWK_TUSR(USR_TRACE_SSP);
     RKH_TR_FWK_TUSR(USR_TRACE_MQTT);
 
-    rkh_queue_init(&qDefer, (const void **)qDefer_sto, SIZEOF_QDEFER, 
+    rkh_queue_init(&(me->qDefer), (const void **)(me->qDefer_sto), SIZEOF_QDEFER,
                 CV(0));
  
     RKH_TMR_INIT(&me->timer, &e_tout, NULL);
 
-    me->channelOpen = sim808AChannelOpen;
-    me->channelClose = sim808AChannelClose;
-    me->channelPutnchar = sim808APutnchar;
-    me->channelPuts = sim808APuts;
+    me->index = MOD_MGR_NONE_INDEX;
+    if (RKH_UPCAST(RKH_SMA_T, me) == MOD_MGR_A){
+        me->index = MOD_MGR_A_INDEX;
+    }
+    if (RKH_UPCAST(RKH_SMA_T, me) == MOD_MGR_B){
+        me->index = MOD_MGR_B_INDEX;
+    }
 
-    me->channelOpen();
+    modMgr_ChannelOpen(me->index);
 }
 
 /* ............................ Effect actions ............................. */
@@ -220,7 +206,7 @@ defer(ModMgr *const me, RKH_EVT_T *pe)
 {
     (void)me;
 
-    rkh_sma_defer(&qDefer, pe);
+    rkh_sma_defer(&(me->qDefer), pe);
 }
 
 static void
@@ -228,7 +214,7 @@ notifyURC(ModMgr *const me, RKH_EVT_T *pe)
 {
     (void)me;
 
-    forwardModMgrEvt(conMgr, pe);
+    forwardModMgrEvt(me, conMgr, pe);
 }
 
 static void
@@ -237,12 +223,12 @@ sendCmd(ModMgr *const me, RKH_EVT_T *pe)
     RKH_FWK_RSV( pe );
     me->pCmd = RKH_UPCAST(ModMgrEvt, pe);
 
-    me->channelPuts(me->pCmd->cmd);
-
     RKH_TRC_USR_BEGIN(USR_TRACE_OUT)
         RKH_TUSR_STR("cmd:");
         RKH_TUSR_STR(me->pCmd->cmd);
     RKH_TRC_USR_END();
+
+    modMgr_Puts(me->index, me->pCmd->cmd);
 }
 
 static void
@@ -251,7 +237,7 @@ sendData(ModMgr *const me, RKH_EVT_T *pe)
     RKH_FWK_RSV( pe );
     me->pCmd = RKH_UPCAST(ModMgrEvt, pe);
 
-    me->channelPutnchar(me->pCmd->data, me->pCmd->nData);
+    modMgr_Putnchar(me->index, me->pCmd->data, me->pCmd->nData);
 #ifdef _SEND_WITH_TERMINATOR
     me->channelPuts(ModCmd_endOfXmitStr());
 #endif
@@ -264,8 +250,8 @@ sendData(ModMgr *const me, RKH_EVT_T *pe)
 static void
 sendResponse(ModMgr *const me, RKH_EVT_T *pe)
 {
-    forwardModMgrEvt((RKH_SMA_T *)*(me->pCmd->args.aoDest), pe);
-    bsp_modStatusToggle();
+    forwardModMgrEvt(me, (RKH_SMA_T *)*(me->pCmd->args.aoDest), pe);
+    bsp_modStatusToggle(me->index);
 }
 
 static void
@@ -274,7 +260,7 @@ noResponse(ModMgr *const me, RKH_EVT_T *pe)
     (void)pe;
     
     RKH_SMA_POST_FIFO((RKH_SMA_T *)*(me->pCmd->args.aoDest), 
-                            &e_noResp, modMgr);
+                            &e_noResp, me);
 
     RKH_FWK_GC(RKH_CAST(RKH_EVT_T, me->pCmd), me);
 }
@@ -296,7 +282,7 @@ moreCmd(ModMgr *const me, RKH_EVT_T *pe)
 
     RKH_FWK_GC(RKH_CAST(RKH_EVT_T, me->pCmd), me);
 
-    rkh_sma_recall((RKH_SMA_T *)me, &qDefer);
+    rkh_sma_recall((RKH_SMA_T *)me, &(me->qDefer));
 }
 
 /* ............................. Entry actions ............................. */

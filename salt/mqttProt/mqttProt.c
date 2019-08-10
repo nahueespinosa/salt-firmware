@@ -27,6 +27,7 @@
 #include "mqtt.h"
 #include "epoch.h"
 #include "date.h"
+#include "saltCfg.h"
 
 /* ----------------------------- Local macros ------------------------------ */
 /* ......................... Declares active object ........................ */
@@ -268,9 +269,9 @@ struct MQTTProt
     const char *errorStr;
 };
 
-RKH_SMA_CREATE(MQTTProt, mqttProt, 2, HCAL, &Client_Idle, init, NULL);
+RKH_SMA_CREATE(MQTTProt, mqttProt, MQTT_PRIORITY, HCAL, &Client_Idle, init, NULL);
 RKH_SMA_DEF_PTR(mqttProt);
-RKH_SM_CONST_CREATE(syncRegion, 3, HCAL, &Sync_Idle, NULL, NULL);
+RKH_SM_CONST_CREATE(syncRegion, MQTT_SYNC_PRIORITY, HCAL, &Sync_Idle, NULL, NULL);
 
 /* ------------------------------- Constants ------------------------------- */
 static const MQTTProtCfg configDft =
