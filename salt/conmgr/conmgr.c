@@ -37,7 +37,7 @@ typedef struct ConMgr ConMgr;
 
 /* ................... Declares states and pseudostates .................... */
 RKH_DCLR_BASIC_STATE ConMgr_inactive, ConMgr_sync, ConMgr_waitInit,
-                ConMgr_init,ConMgr_error, ConMgr_pin, ConMgr_setPin, ConMgr_enableNetTime,
+                ConMgr_init,ConMgr_error, ConMgr_gps, ConMgr_pin, ConMgr_setPin, ConMgr_enableNetTime,
                 ConMgr_getImei, ConMgr_cipShutdown, ConMgr_setManualGet,
                 ConMgr_waitReg, ConMgr_unregistered, ConMgr_failure,
                 ConMgr_waitNetClockSync, ConMgr_localTime, ConMgr_getOper,
@@ -86,6 +86,8 @@ static void sendFail(ConMgr *const me, RKH_EVT_T *pe);
 static void recvFail(ConMgr *const me, RKH_EVT_T *pe);
 static void tryGetStatus(ConMgr *const me, RKH_EVT_T *pe);
 
+static void setGpsData(ConMgr *const me, RKH_EVT_T *pe);
+
 /* ......................... Declares entry actions ........................ */
 static void sendSync(ConMgr *const me);
 static void sendInit(ConMgr *const me);
@@ -113,6 +115,7 @@ static void idleEntry(ConMgr *const me);
 
 static void setInitTimeOut(ConMgr *const me);
 static void errorReport(ConMgr *const me);
+static void initGps(ConMgr *const me);
 /* ......................... Declares exit actions ......................... */
 static void unregExit(ConMgr *const me);
 static void regExit(ConMgr *const me);
@@ -149,6 +152,7 @@ RKH_CREATE_TRANS_TABLE(ConMgr_active)
     RKH_TRINT(evRecv, NULL, recvFail),
     RKH_TRCOMPLETION(NULL, NULL, &ConMgr_inactive),
     RKH_TRREG(evClose, NULL, close, &ConMgr_inactive),
+    RKH_TRINT(evGps, NULL, setGpsData),
 RKH_END_TRANS_TABLE
 
 RKH_CREATE_COMP_REGION_STATE(ConMgr_initialize, NULL, NULL, &ConMgr_active, 
@@ -186,8 +190,14 @@ RKH_END_TRANS_TABLE
 
 RKH_CREATE_BASIC_STATE(ConMgr_error, errorReport, NULL, &ConMgr_initialize, NULL);
 RKH_CREATE_TRANS_TABLE(ConMgr_error)
+                RKH_TRREG(evOk,         NULL, NULL, &ConMgr_gps),
+RKH_END_TRANS_TABLE
+
+RKH_CREATE_BASIC_STATE(ConMgr_gps, initGps, NULL, &ConMgr_initialize, NULL);
+RKH_CREATE_TRANS_TABLE(ConMgr_gps)
                 RKH_TRREG(evOk,         NULL, NULL, &ConMgr_pin),
 RKH_END_TRANS_TABLE
+
 
 RKH_CREATE_BASIC_STATE(ConMgr_pin, checkPin, NULL, &ConMgr_initialize, NULL);
 RKH_CREATE_TRANS_TABLE(ConMgr_pin)
@@ -294,6 +304,11 @@ RKH_CREATE_TRANS_TABLE(ConMgr_checkIP)
     RKH_TRREG(evIPStart,    NULL,         NULL, &ConMgr_checkIP),
     RKH_TRREG(evIPStatus,   NULL,         NULL, &ConMgr_configureFinal),
 RKH_END_TRANS_TABLE
+
+//RKH_CREATE_BASIC_STATE(ConMgr_gps, initGps, NULL, &ConMgr_configure, NULL);
+//RKH_CREATE_TRANS_TABLE(ConMgr_gps)
+//                RKH_TRREG(evOk,         NULL, NULL, &ConMgr_configureFinal),
+//RKH_END_TRANS_TABLE
 
 RKH_CREATE_COND_STATE(ConMgr_checkConfigTry);
 RKH_CREATE_BRANCH_TABLE(ConMgr_checkConfigTry)
@@ -417,13 +432,15 @@ RKH_END_TRANS_TABLE
 struct ConMgr
 {
     RKH_SMA_T ao;       /* base structure */
-    RKH_TMR_T timer;    
+    RKH_TMR_T timer;
     RKH_TMR_T timerReg;
-    rui8_t retryCount; 
+    rui8_t retryCount;
     SendEvt *psend;
     int sigLevel;
     char Imei[IMEI_BUF_SIZE];
     char Oper[OPER_BUF_SIZE];
+
+    GpsDataCallback gpsDataCallback;
 };
 
 typedef struct Apn
@@ -496,6 +513,10 @@ getAPNbyOper(char *oper)
             return &(pOper->apn);
     }
     return defaultAPN;
+}
+
+static void defGpsCallback(GpsData *gpsData){
+    int i = 0;
 }
 
 /* ............................ Initial action ............................. */
@@ -594,6 +615,8 @@ init(ConMgr *const me, RKH_EVT_T *pe)
     RKH_TMR_INIT(&me->timer, &e_tout, NULL);
     RKH_TMR_INIT(&me->timerReg, &e_regTout, NULL);
     me->retryCount = 0;
+
+    me->gpsDataCallback = defGpsCallback;
 }
 
 /* ............................ Effect actions ............................. */
@@ -633,7 +656,7 @@ setSigLevel(ConMgr *const me, RKH_EVT_T *pe)
 {
     SigLevelEvt *p;
     (void)me;
-    
+
     p = RKH_UPCAST(SigLevelEvt, pe);
     me->sigLevel = p->value;
 }
@@ -843,6 +866,18 @@ tryGetStatus(ConMgr *const me, RKH_EVT_T *pe)
 	ModCmd_init();
 }
 
+static void
+setGpsData(ConMgr *const me, RKH_EVT_T *pe)
+{
+    GpsEvt *p;
+    (void)me;
+
+    p = RKH_DOWNCAST(GpsEvt, pe);
+    if(me->gpsDataCallback != NULL){
+        (me->gpsDataCallback)(&(p->gpsData));
+    }
+}
+
 /* ............................. Entry actions ............................. */
 static void
 sendSync(ConMgr *const me)
@@ -1047,6 +1082,12 @@ static void
 errorReport(ConMgr *const me)
 {
     ModCmd_errorReport();
+}
+
+static void
+initGps(ConMgr *const me)
+{
+    ModCmd_startGPS();
 }
 
 

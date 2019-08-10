@@ -70,6 +70,8 @@ void ModCmd_readData(void);
 char *ModCmd_endOfXmitStr(void);
 
 void ModCmd_errorReport(void);
+void ModCmd_startGPS(void);
+
 
 /* -------------------- External C language linkage end -------------------- */
 #ifdef __cplusplus

@@ -265,6 +265,11 @@
 			<locationURI>PARENT-4-PROJECT_LOC/salt/epoch</locationURI>
 		</link>
 		<link>
+			<name>src/salt/gps</name>
+			<type>2</type>
+			<locationURI>PARENT-4-PROJECT_LOC/salt/gps</locationURI>
+		</link>
+		<link>
 			<name>src/salt/ihm</name>
 			<type>2</type>
 			<locationURI>PARENT-4-PROJECT_LOC/salt/ihm</locationURI>

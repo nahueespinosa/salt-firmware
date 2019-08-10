@@ -24,6 +24,7 @@
 #include "rkh.h"
 #include "epoch.h"
 #include "modMgr.h"
+#include "gps.h"
 
 /* ---------------------- External C language linkage ---------------------- */
 #ifdef __cplusplus
@@ -171,6 +172,8 @@ extern "C" {
 RKH_SMA_DCLR(conMgr);
 
 /* ------------------------------- Data types ------------------------------ */
+typedef void (*GpsDataCallback)(GpsData *gpsData);
+
 typedef struct SendEvt SendEvt;
 struct SendEvt
 {
@@ -194,6 +197,7 @@ struct LocalTimeEvt
     Time time;
 };
 
+
 typedef struct ImeiEvt ImeiEvt;
 struct ImeiEvt
 {
@@ -213,6 +217,14 @@ struct SigLevelEvt
 {
     ModMgrResp e;
     int value;
+};
+
+
+typedef struct GpsEvt GpsEvt;
+struct GpsEvt
+{
+    ModMgrResp e;
+    GpsData gpsData;
 };
 
 /* -------------------------- External variables --------------------------- */

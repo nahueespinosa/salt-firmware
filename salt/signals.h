@@ -84,6 +84,7 @@ enum Signals
     evSigLevel,         // 48
 	evRestart,          // 49
     evInitEnd,          // 50
+    evGps,              // 51
 };
 typedef enum Signals Signals;
 

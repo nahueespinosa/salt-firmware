@@ -21,7 +21,10 @@
 #include "modmgr.h"
 #include "conmgr.h"
 #include "bsp.h"
+#include "gps.h"
 #include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
 /* ----------------------------- Local macros ------------------------------ */
 /* ------------------------------- Constants ------------------------------- */
@@ -30,7 +33,9 @@
 #define LTBUFF_SIZE         5
 #define CSQ_LENGTH   4
 
-#define REC_CMD_LENGTH   200
+#define GPS_BUFF_SIZE        12
+#define GPS_AUX_BUFF_SIZE   12
+#define REC_CMD_LENGTH      200
 
 /* ---------------------------- Local data types --------------------------- */
 /* ---------------------------- Global variables --------------------------- */
@@ -49,10 +54,14 @@ SSP_DCLR_NORMAL_NODE at, waitOK, at_plus, at_plus_c, at_plus_ci,
                      at_plus_cpin, at_plus_creg, pinStatusHead, pinStatus, wpinSet, pinSet,
                      plus_c, plus_creg, at_plus_cifsr,
                      netClockSync,
-                     at_plus_cclk, at_plus_cops, cclk_end;
+                     at_plus_cclk, at_plus_cops, cclk_end,
+                     at_plus_cgps, gps_end;
 
 SSP_DCLR_TRN_NODE at_plus_ciprxget_data, cclk_year, cclk_month, cclk_day,
-                  cclk_hour, cclk_min, plus_csq, at_plus_gsn, cops_read;
+                  cclk_hour, cclk_min, plus_csq, at_plus_gsn, cops_read,
+                  gps_time, gps_status, gps_latitude, gps_latitude_indicator,
+                  gps_longitude, gps_longitude_indicator, gps_speed, gps_course,
+                  gps_date;
 
 static rui8_t isURC;
 
@@ -73,6 +82,12 @@ static char *pCops;
 char *pcsq;
 char csqBuf[CSQ_LENGTH];
 static SigLevelEvt sigLevelEvt;
+
+static GpsEvt gpsEvt;
+static GpsData *gpsData;
+static char gpsbuf[GPS_BUFF_SIZE];
+static char gpsAuxbuf[GPS_AUX_BUFF_SIZE];
+static char *pgps;
 
 char recCmdBuf[REC_CMD_LENGTH];
 char *recCmdNext = NULL;
@@ -126,6 +141,26 @@ static void csqSet(unsigned char pos);
 
 static void dummy(unsigned char pos);
 static void init_end(unsigned char pos);
+static void gpsInit(unsigned char pos);
+static void gpsTimeCollect(unsigned char c);
+#define gpsStatusCollect                gpsTimeCollect
+#define gpsLatitudeCollect              gpsTimeCollect
+#define gpsLatitudeIndicatorCollect     gpsTimeCollect
+#define gpsLongitudeCollect             gpsTimeCollect
+#define gpsLongitudeIndicatorCollect    gpsTimeCollect
+#define gpsSpeedCollect                 gpsTimeCollect
+#define gpsCourseCollect                gpsTimeCollect
+#define gpsDateCollect                  gpsTimeCollect
+static void gpsTimeSet(unsigned char pos);
+static void gpsStatusSet(unsigned char pos);
+static void gpsLatitudeSet(unsigned char pos);
+static void gpsLatitudeIndicatorSet(unsigned char pos);
+static void gpsLongitudeSet(unsigned char pos);
+static void gpsLongitudeIndicatorSet(unsigned char pos);
+static void gpsSpeedSet(unsigned char pos);
+static void gpsCourseSet(unsigned char pos);
+static void gpsDateSet(unsigned char pos);
+static void gpsSet(unsigned char pos);
 
 /* ---------------------------- Local functions ---------------------------- */
 
@@ -137,6 +172,7 @@ SSP_CREATE_BR_TABLE(rootCmdParser)
 	SSPBR("+C",         NULL,     &plus_c),
 	SSPBR("*PSUTTZ",    isURC_set,&netClockSync),
     SSPBR("SMS Ready",  init_end, &rootCmdParser),
+    SSPBR("$GPRMC,",  gpsInit, &gps_time),
 SSP_END_BR_TABLE
 
 SSP_CREATE_NORMAL_NODE(at);
@@ -163,6 +199,7 @@ SSP_CREATE_BR_TABLE(at_plus_c)
 	SSPBR("CLK?",           NULL,   &at_plus_cclk),
 	SSPBR("OPS?",           NULL,   &at_plus_cops),
     SSPBR("MEE=1",          NULL,   &waitOK),
+    SSPBR("GPS",          NULL,   &waitOK),
 	SSPBR("\r\n",   NULL,  &rootCmdParser),
 SSP_END_BR_TABLE
 
@@ -451,6 +488,65 @@ SSP_END_BR_TABLE
 SSP_CREATE_TRN_NODE(at_plus_gsn, imeiCollect);
 SSP_CREATE_BR_TABLE(at_plus_gsn)
 	SSPBR("OK\r\n", imeiSet, &rootCmdParser),
+SSP_END_BR_TABLE
+
+/* ---------------------------- AT+CGPS --------------------------- */
+
+SSP_CREATE_NORMAL_NODE(at_plus_cgps);
+SSP_CREATE_BR_TABLE(at_plus_cgps)
+                SSPBR("PWR=1;+CGPSOUT=32",  NULL, &waitOK),
+                SSPBR("OUT=0;+CGPSPWR=0",   NULL, &waitOK),
+                SSPBR("\r\n",   NULL, &rootCmdParser),
+SSP_END_BR_TABLE
+
+SSP_CREATE_TRN_NODE(gps_time, gpsTimeCollect);
+SSP_CREATE_BR_TABLE(gps_time)
+                SSPBR(",",      gpsTimeSet,  &gps_status),
+SSP_END_BR_TABLE
+
+SSP_CREATE_TRN_NODE(gps_status, gpsStatusCollect);
+SSP_CREATE_BR_TABLE(gps_status)
+                SSPBR(",",      gpsStatusSet,  &gps_latitude),
+SSP_END_BR_TABLE
+
+SSP_CREATE_TRN_NODE(gps_latitude, gpsLatitudeCollect);
+SSP_CREATE_BR_TABLE(gps_latitude)
+                SSPBR(",",      gpsLatitudeSet,  &gps_latitude_indicator),
+SSP_END_BR_TABLE
+
+SSP_CREATE_TRN_NODE(gps_latitude_indicator, gpsLatitudeIndicatorCollect);
+SSP_CREATE_BR_TABLE(gps_latitude_indicator)
+                SSPBR(",",      gpsLatitudeIndicatorSet,  &gps_longitude),
+SSP_END_BR_TABLE
+
+SSP_CREATE_TRN_NODE(gps_longitude, gpsLongitudeCollect);
+SSP_CREATE_BR_TABLE(gps_longitude)
+                SSPBR(",",      gpsLongitudeSet,  &gps_longitude_indicator),
+SSP_END_BR_TABLE
+
+SSP_CREATE_TRN_NODE(gps_longitude_indicator, gpsLongitudeIndicatorCollect);
+SSP_CREATE_BR_TABLE(gps_longitude_indicator)
+                SSPBR(",",      gpsLongitudeIndicatorSet,  &gps_speed),
+SSP_END_BR_TABLE
+
+SSP_CREATE_TRN_NODE(gps_speed, gpsSpeedCollect);
+SSP_CREATE_BR_TABLE(gps_speed)
+                SSPBR(",",      gpsSpeedSet,  &gps_course),
+SSP_END_BR_TABLE
+
+SSP_CREATE_TRN_NODE(gps_course, gpsCourseCollect);
+SSP_CREATE_BR_TABLE(gps_course)
+                SSPBR(",",      gpsCourseSet,  &gps_date),
+SSP_END_BR_TABLE
+
+SSP_CREATE_TRN_NODE(gps_date, gpsDateCollect);
+SSP_CREATE_BR_TABLE(gps_date)
+                SSPBR(",",      gpsDateSet,  &gps_end),
+SSP_END_BR_TABLE
+
+SSP_CREATE_NORMAL_NODE(gps_end);
+SSP_CREATE_BR_TABLE(gps_end)
+                SSPBR("\n",      gpsSet,  &rootCmdParser),
 SSP_END_BR_TABLE
 
 /* --------------------------------------------------------------- */
@@ -860,6 +956,177 @@ static void init_end(unsigned char pos){
     isURC = 1;
 
     sendModResp_noArgs(evInitEnd);
+}
+
+
+//static GpsEvt gpsEvt;
+//static GpsData *gpsData;
+//static char gpsbuf[GPS_BUFF_SIZE];
+//static char *pgps;
+
+static void gpsInit(unsigned char pos){
+    (void)pos;
+
+    pgps = gpsbuf;
+    *pgps = '\0';
+
+    gpsData = &gpsEvt.gpsData;
+}
+static void gpsTimeCollect(unsigned char c){
+    if(pgps >= gpsbuf + GPS_BUFF_SIZE)
+        return;
+
+    *pgps = c;
+    ++pgps;
+}
+static void gpsTimeSet(unsigned char pos){
+
+    (void)pos;
+
+    *pgps = '\0';
+
+    memcpy(gpsAuxbuf, gpsbuf, 2);
+    gpsAuxbuf[2]='\0';
+    gpsData->time.tm_hour = (unsigned char)atoi(gpsAuxbuf);
+
+    memcpy(gpsAuxbuf, gpsbuf + 2, 2);
+    gpsAuxbuf[2]='\0';
+    gpsData->time.tm_min = (unsigned char)atoi(gpsAuxbuf);
+
+    memcpy(gpsAuxbuf, gpsbuf + 4, 2);
+    gpsAuxbuf[2]='\0';
+    gpsData->time.tm_sec = (unsigned char)atoi(gpsAuxbuf);
+
+    pgps = gpsbuf;
+}
+static void gpsStatusSet(unsigned char pos){
+    (void)pos;
+
+    *pgps = '\0';
+
+    switch (gpsbuf[0]){
+        case 'A':
+            gpsData->valid = RKH_TRUE;
+            break;
+        case 'V':
+        default:
+            gpsData->valid = RKH_FALSE;
+            break;
+    }
+
+    pgps = gpsbuf;
+}
+static void gpsLatitudeSet(unsigned char pos){
+    (void)pos;
+
+    *pgps = '\0';
+
+    memcpy(gpsAuxbuf, gpsbuf, 2);
+    gpsAuxbuf[2]='\0';
+    gpsData->latitude_deg = (unsigned char)atoi(gpsAuxbuf);
+
+    strcpy(gpsAuxbuf, gpsbuf + 2);
+    gpsData->latitude_min = (float)atof(gpsAuxbuf);
+
+    pgps = gpsbuf;
+}
+static void gpsLatitudeIndicatorSet(unsigned char pos){
+    (void)pos;
+
+    *pgps = '\0';
+
+    switch (gpsbuf[0]){
+        case 'N':
+            gpsData->latitude_north = RKH_TRUE;
+            break;
+        case 'S':
+        default:
+            gpsData->latitude_north = RKH_FALSE;
+            break;
+    }
+
+    pgps = gpsbuf;
+}
+static void gpsLongitudeSet(unsigned char pos){
+    (void)pos;
+
+    *pgps = '\0';
+
+    memcpy(gpsAuxbuf, gpsbuf, 2);
+    gpsAuxbuf[2]='\0';
+    gpsData->longitude_deg = (unsigned char)atoi(gpsAuxbuf);
+
+    strcpy(gpsAuxbuf, gpsbuf + 2);
+    gpsData->longitude_min = (float)atof(gpsAuxbuf);
+
+    pgps = gpsbuf;
+}
+static void gpsLongitudeIndicatorSet(unsigned char pos){
+    (void)pos;
+
+    *pgps = '\0';
+
+    switch (gpsbuf[0]){
+        case 'E':
+            gpsData->longitude_east = RKH_TRUE;
+            break;
+        case 'W':
+        default:
+            gpsData->longitude_east = RKH_FALSE;
+            break;
+    }
+
+    pgps = gpsbuf;
+}
+static void gpsSpeedSet(unsigned char pos){
+    (void)pos;
+
+    *pgps = '\0';
+
+    gpsData->speed = (float)atof(gpsbuf);
+
+    pgps = gpsbuf;
+}
+static void gpsCourseSet(unsigned char pos){
+    (void)pos;
+
+    *pgps = '\0';
+
+    gpsData->course = (float)atof(gpsbuf);
+
+    pgps = gpsbuf;
+}
+static void gpsDateSet(unsigned char pos){
+    (void)pos;
+
+    *pgps = '\0';
+
+    memcpy(gpsAuxbuf, gpsbuf, 2);
+    gpsAuxbuf[2]='\0';
+    gpsData->time.tm_mday = (unsigned char)atoi(gpsAuxbuf);
+
+    memcpy(gpsAuxbuf, gpsbuf + 2, 2);
+    gpsAuxbuf[2]='\0';
+    gpsData->time.tm_mon = (unsigned char)atoi(gpsAuxbuf);
+
+    memcpy(gpsAuxbuf, gpsbuf + 4, 2);
+    gpsAuxbuf[2]='\0';
+    gpsData->time.tm_year = (short)(YEAR2K + atoi(gpsAuxbuf));
+
+    pgps = gpsbuf;
+}
+static void gpsSet(unsigned char pos)
+{
+    (void)pos;
+
+    recCmdFlush();
+
+    RKH_SET_STATIC_EVENT(RKH_UPCAST(RKH_EVT_T, &gpsEvt), evURC);
+
+    gpsEvt.e.fwdEvt = evGps;
+
+    RKH_SMA_POST_FIFO(modMgr, RKH_UPCAST(RKH_EVT_T, &gpsEvt),
+                      &sim900parser);
 }
 
 void recCmdCollect(unsigned char c){
