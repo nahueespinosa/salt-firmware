@@ -32,6 +32,14 @@ extern "C" {
 #endif
 
 /* --------------------------------- Macros -------------------------------- */
+typedef enum ConMgrIndex {
+    CON_MGR_A_INDEX, CON_MGR_B_INDEX,
+    NUM_CON_MGR,
+    CON_MGR_NONE_INDEX
+}ConMgrIndex;
+#define CON_MGR_LIST(no_) RKH_ARRAY_SMA(conMgrs, no_)
+#define CON_MGR_A         CON_MGR_LIST(CON_MGR_A_INDEX)
+#define CON_MGR_B         CON_MGR_LIST(CON_MGR_B_INDEX)
 /* -------------------------------- Constants ------------------------------ */
 
 /**
@@ -169,10 +177,17 @@ extern "C" {
 
 /* ................................ Signals ................................ */
 /* ........................ Declares active object ......................... */
-RKH_SMA_DCLR(conMgr);
+RKH_ARRAY_SMA_DCLR(conMgrs, NUM_CON_MGR);
 
 /* ------------------------------- Data types ------------------------------ */
 typedef void (*GpsDataCallback)(GpsData *gpsData);
+
+typedef struct FromConMgrEvt FromConMgrEvt;
+struct FromConMgrEvt
+{
+    RKH_EVT_T evt;
+    ConMgrIndex conMgrIndex;
+};
 
 typedef struct SendEvt SendEvt;
 struct SendEvt
@@ -185,7 +200,7 @@ struct SendEvt
 typedef struct ReceivedEvt ReceivedEvt;
 struct ReceivedEvt
 {
-    RKH_EVT_T evt;
+    FromConMgrEvt evt;
     unsigned char buf[RECV_BUFF_SIZE];
     ruint size;
 };
@@ -227,12 +242,15 @@ struct GpsEvt
     GpsData gpsData;
 };
 
+
 /* -------------------------- External variables --------------------------- */
 /* -------------------------- Function prototypes -------------------------- */
-ReceivedEvt * ConMgr_ReceiveDataGetRef(void);
-char * ConMgr_imei(void);
-char * ConMgr_imeiSNR(void);
-int ConMgr_sigLevel(void);
+ReceivedEvt * ConMgr_ReceiveDataGetRef(ConMgrIndex index);
+char * ConMgr_imei(ConMgrIndex index);
+char * ConMgr_imeiSNR(ConMgrIndex index);
+int ConMgr_sigLevel(ConMgrIndex index);
+
+RKH_SMA_T* conMgr_GetConMgr(ConMgrIndex index);
 
 /* -------------------- External C language linkage end -------------------- */
 #ifdef __cplusplus

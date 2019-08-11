@@ -76,8 +76,10 @@ bsp_init()
 
     bsp_modStatus(0, DisconnectedSt);
     bsp_modStatus(1, DisconnectedSt);
-    RegStatus(UnregisteredSt);
-    NetStatus(DisconnectedSt);
+    bsp_regStatus(0, UnregisteredSt);
+    bsp_regStatus(1, UnregisteredSt);
+    bsp_netStatus(0, DisconnectedSt);
+    bsp_netStatus(1, DisconnectedSt);
 
     modPwr_init();
     rtime_init();
@@ -99,15 +101,33 @@ rkh_trc_getts(void)
 }
 
 void
-bsp_regStatus(Status_t status)
+bsp_regStatus(int ch, Status_t status)
 {
-    RegStatus(status);
+    switch(ch){
+        case 0:
+            gpioWrite(LED2, status);
+            break;
+        case 1:
+            gpioWrite(LEDG, status);
+            break;
+        default:
+            break;
+    }
 }
 
 void 
-bsp_netStatus(Status_t status)
+bsp_netStatus(int ch, Status_t status)
 {
-    NetStatus(status);
+    switch(ch){
+        case 0:
+            gpioWrite(LED3, status);
+            break;
+        case 1:
+            gpioWrite(LEDB, status);
+            break;
+        default:
+            break;
+    }
 }
 
 void bsp_modStatus(int ch, Status_t status){

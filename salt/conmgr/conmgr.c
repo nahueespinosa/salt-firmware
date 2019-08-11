@@ -442,8 +442,18 @@ struct ConMgr
     char Imei[IMEI_BUF_SIZE];
     char Oper[OPER_BUF_SIZE];
 
+    RKH_QUEUE_T qDefer;
+    RKH_EVT_T *qDefer_sto[SIZEOF_QDEFER];
+
     RKH_SMA_T* modMgr;
-    enum SIM_808_PARSER_INDEX parser_index;
+    ReceivedEvt receivedEvt;
+    FromConMgrEvt fromConMgrEvt;
+
+    ConMgrIndex index;
+    Sim808ParserIndex parser_index;
+    ModPwrIndex modPwrIndex;
+
+
     GpsDataCallback gpsDataCallback;
 };
 
@@ -460,8 +470,15 @@ typedef struct Operator
     Apn apn;
 }Operator;
 
-RKH_SMA_CREATE(ConMgr, conMgr, CON_MGR_PRIORITY, HCAL, &ConMgr_inactive, init, NULL);
-RKH_SMA_DEF_PTR(conMgr);
+RKH_SMA_CREATE(ConMgr, conMgrA, CON_MGR_A_PRIORITY, HCAL, &ConMgr_inactive, init, NULL);
+RKH_SMA_DEF_PTR(conMgrA);
+RKH_SMA_CREATE(ConMgr, conMgrB, CON_MGR_B_PRIORITY, HCAL, &ConMgr_inactive, init, NULL);
+RKH_SMA_DEF_PTR(conMgrB);
+
+RKH_ARRAY_SMA_CREATE(conMgrs, NUM_CON_MGR)
+        {
+                &conMgrA, &conMgrB,
+        };
 
 /* ------------------------------- Constants ------------------------------- */
 #define IMEI_SNR_OFFSET  8
@@ -478,15 +495,6 @@ static RKH_STATIC_EVENT(e_tout, evToutDelay);
 static RKH_STATIC_EVENT(e_regTout, evRegTimeout);
 static RKH_ROM_STATIC_EVENT(e_Open, evOpen);
 static RKH_ROM_STATIC_EVENT(e_Close, evClose);
-static RKH_ROM_STATIC_EVENT(e_NetConnected, evNetConnected);
-static RKH_ROM_STATIC_EVENT(e_NetDisconnected, evNetDisconnected);
-static RKH_ROM_STATIC_EVENT(e_Sent,     evSent);
-static RKH_ROM_STATIC_EVENT(e_SendFail, evSendFail);
-static RKH_ROM_STATIC_EVENT(e_RecvFail, evRecvFail);
-ReceivedEvt e_Received;
-
-static RKH_QUEUE_T qDefer;
-static RKH_EVT_T *qDefer_sto[SIZEOF_QDEFER];
 
 static Operator operTable[] =
 {
@@ -613,16 +621,31 @@ init(ConMgr *const me, RKH_EVT_T *pe)
     RKH_TR_FWK_SIG(evSigLevel);
     RKH_TR_FWK_SIG(evRegTimeout);
 
-    rkh_queue_init(&qDefer, (const void **)qDefer_sto, SIZEOF_QDEFER, 
+    rkh_queue_init(&(me->qDefer), (const void **)me->qDefer_sto, SIZEOF_QDEFER,
                 CV(0));
 
     RKH_TMR_INIT(&me->timer, &e_tout, NULL);
     RKH_TMR_INIT(&me->timerReg, &e_regTout, NULL);
     me->retryCount = 0;
 
+    me->index = CON_MGR_NONE_INDEX;
+    if (RKH_UPCAST(RKH_SMA_T, me) == CON_MGR_A){
+        me->index = CON_MGR_A_INDEX;
+        me->parser_index = SIM_808_PARSER_A_INDEX;
+        me->modPwrIndex = ModPwrA;
+        me->modMgr = MOD_MGR_A;
+    }
+    if (RKH_UPCAST(RKH_SMA_T, me) == CON_MGR_B){
+        me->index = CON_MGR_B_INDEX;
+        me->parser_index = SIM_808_PARSER_B_INDEX;
+        me->modPwrIndex = ModPwrB;
+        me->modMgr = MOD_MGR_B;
+    }
+
+    me->fromConMgrEvt.conMgrIndex = me->index;
+    me->receivedEvt.evt.conMgrIndex = me->index;
+
     me->gpsDataCallback = defGpsCallback;
-    me->parser_index = SIM_808_PARSER_A_INDEX;
-    me->modMgr = MOD_MGR_A;
 }
 
 /* ............................ Effect actions ............................. */
@@ -632,9 +655,9 @@ open(ConMgr *const me, RKH_EVT_T *pe)
     (void)pe;
     (void)me;
 
-    RKH_SMA_POST_FIFO(me->modMgr, &e_Open, conMgr);
+    RKH_SMA_POST_FIFO(me->modMgr, &e_Open, me);
 
-    modPwr_on();
+    modPwr_on(me->modPwrIndex);
 }
 
 static void
@@ -643,9 +666,9 @@ close(ConMgr *const me, RKH_EVT_T *pe)
     (void)pe;
     (void)me;
 
-    RKH_SMA_POST_FIFO(me->modMgr, &e_Close, conMgr);
+    RKH_SMA_POST_FIFO(me->modMgr, &e_Close, me);
 
-    modPwr_off();
+    modPwr_off(me->modPwrIndex);
 }
 
 static void
@@ -653,8 +676,8 @@ defer(ConMgr *const me, RKH_EVT_T *pe)
 {
     (void)me;
 
-    if( rkh_queue_is_full(&qDefer) != RKH_TRUE )
-    	rkh_sma_defer(&qDefer, pe);
+    if( rkh_queue_is_full(&(me->qDefer)) != RKH_TRUE )
+    	rkh_sma_defer(&(me->qDefer), pe);
 }
 
 static void
@@ -706,7 +729,7 @@ checkRegStatus(ConMgr *const me, RKH_EVT_T *pe)
     (void)me;
     (void)pe;
 
-    ModCmd_getRegStatus(me->modMgr);
+    ModCmd_getRegStatus(me->modMgr, RKH_UPCAST(RKH_SMA_T,me));
 }
 
 static void
@@ -724,7 +747,7 @@ localTimeGet(ConMgr *const me, RKH_EVT_T *pe)
 	(void)me;
 	(void)pe;
 
-    ModCmd_getLocalTime(me->modMgr);
+    ModCmd_getLocalTime(me->modMgr, RKH_UPCAST(RKH_SMA_T,me));
 }
 
 static void 
@@ -758,7 +781,7 @@ requestIp(ConMgr *const me, RKH_EVT_T *pe)
     (void)pe;
     (void)me;
 
-    ModCmd_requestIP(me->modMgr);
+    ModCmd_requestIP(me->modMgr, RKH_UPCAST(RKH_SMA_T,me));
 }
 
 static void
@@ -783,7 +806,7 @@ socketOpen(ConMgr *const me, RKH_EVT_T *pe)
     (void)me;
     (void)pe;
 
-    ModCmd_connect(me->modMgr, CONNECTION_PROT, CONNECTION_DOMAIN, CONNECTION_PORT);
+    ModCmd_connect(me->modMgr, RKH_UPCAST(RKH_SMA_T,me), CONNECTION_PROT, CONNECTION_DOMAIN, CONNECTION_PORT);
 }
 
 static void
@@ -792,7 +815,7 @@ socketClose(ConMgr *const me, RKH_EVT_T *pe)
     (void)me;
     (void)pe;
 
-    ModCmd_disconnect(me->modMgr);
+    ModCmd_disconnect(me->modMgr, RKH_UPCAST(RKH_SMA_T,me));
 }
 
 static void 
@@ -801,8 +824,8 @@ readData(ConMgr *const me, RKH_EVT_T *pe)
     (void)pe;
     (void)me;
 
-    RKH_SET_STATIC_EVENT(RKH_UPCAST(RKH_EVT_T, &e_Received), evReceived);
-    ModCmd_readData(me->modMgr);
+    RKH_SET_STATIC_EVENT(RKH_UPCAST(RKH_EVT_T, &(me->receivedEvt)), evReceived);
+    ModCmd_readData(me->modMgr, RKH_UPCAST(RKH_SMA_T,me));
 }
 
 static void
@@ -812,7 +835,7 @@ sendRequest(ConMgr *const me, RKH_EVT_T *pe)
 
     me->psend = RKH_UPCAST(SendEvt, pe);
 
-    ModCmd_sendDataRequest(me->modMgr, (rui16_t)(me->psend->size));
+    ModCmd_sendDataRequest(me->modMgr, RKH_UPCAST(RKH_SMA_T,me), (rui16_t)(me->psend->size));
 }
 
 static void
@@ -820,7 +843,7 @@ flushData(ConMgr *const me, RKH_EVT_T *pe)
 {
     (void)pe;
 
-    ModCmd_sendData(me->modMgr, me->psend->buf, me->psend->size);
+    ModCmd_sendData(me->modMgr, RKH_UPCAST(RKH_SMA_T,me), me->psend->buf, me->psend->size);
 }
 
 static void
@@ -830,7 +853,8 @@ sendOk(ConMgr *const me, RKH_EVT_T *pe)
     (void)me;
 
     me->retryCount = 0;
-    RKH_SMA_POST_FIFO(mqttProt, &e_Sent, conMgr);
+    RKH_SET_STATIC_EVENT(RKH_UPCAST(RKH_EVT_T, &(me->fromConMgrEvt)), evSent);
+    RKH_SMA_POST_FIFO(mqttProt, RKH_UPCAST(RKH_EVT_T, &(me->fromConMgrEvt)), me);
 }
 
 static void
@@ -840,7 +864,7 @@ recvOk(ConMgr *const me, RKH_EVT_T *pe)
     (void)me;
 
     me->retryCount = 0;
-    RKH_SMA_POST_FIFO(mqttProt, RKH_UPCAST(RKH_EVT_T, &e_Received), conMgr);
+    RKH_SMA_POST_FIFO(mqttProt, RKH_UPCAST(RKH_EVT_T, &(me->receivedEvt)), me);
 }
 
 static void
@@ -849,7 +873,8 @@ sendFail(ConMgr *const me, RKH_EVT_T *pe)
     (void)pe;
     (void)me;
 
-    RKH_SMA_POST_FIFO(mqttProt, &e_SendFail, conMgr);
+    RKH_SET_STATIC_EVENT(RKH_UPCAST(RKH_EVT_T, &(me->fromConMgrEvt)), evSendFail);
+    RKH_SMA_POST_FIFO(mqttProt, RKH_UPCAST(RKH_EVT_T, &(me->fromConMgrEvt)), me);
 	ModCmd_init(sim808parser_getSSP(me->parser_index));
 }
 
@@ -858,8 +883,8 @@ recvFail(ConMgr *const me, RKH_EVT_T *pe)
 {
     (void)pe;
     (void)me;
-
-    RKH_SMA_POST_FIFO(mqttProt, &e_RecvFail, conMgr);
+    RKH_SET_STATIC_EVENT(RKH_UPCAST(RKH_EVT_T, &(me->fromConMgrEvt)), evRecvFail);
+    RKH_SMA_POST_FIFO(mqttProt, RKH_UPCAST(RKH_EVT_T, &(me->fromConMgrEvt)), me);
 	ModCmd_init(sim808parser_getSSP(me->parser_index));
 }
 
@@ -890,7 +915,7 @@ sendSync(ConMgr *const me)
 {
     ++me->retryCount;
 
-    ModCmd_sync(me->modMgr);
+    ModCmd_sync(me->modMgr, RKH_UPCAST(RKH_SMA_T,me));
 }
 
 static void
@@ -898,7 +923,7 @@ sendInit(ConMgr *const me)
 {
     (void)me;
 
-    ModCmd_initStr(me->modMgr);
+    ModCmd_initStr(me->modMgr, RKH_UPCAST(RKH_SMA_T,me));
 }
 
 static void
@@ -906,7 +931,7 @@ checkPin(ConMgr *const me)
 {
     (void)me;
 
-    ModCmd_getPinStatus(me->modMgr);
+    ModCmd_getPinStatus(me->modMgr, RKH_UPCAST(RKH_SMA_T,me));
 }
 
 static void
@@ -914,7 +939,7 @@ setPin(ConMgr *const me)
 {
     (void)me;
 
-    ModCmd_setPin(me->modMgr, SIM_PIN_NUMBER);
+    ModCmd_setPin(me->modMgr, RKH_UPCAST(RKH_SMA_T,me), SIM_PIN_NUMBER);
 }
 
 static void
@@ -922,7 +947,7 @@ netTimeEnable(ConMgr *const me)
 {
     (void)me;
 
-    ModCmd_enableNetTime(me->modMgr);
+    ModCmd_enableNetTime(me->modMgr, RKH_UPCAST(RKH_SMA_T,me));
 }
 
 static void
@@ -930,7 +955,7 @@ getImei(ConMgr *const me)
 {
     (void)me;
 
-    ModCmd_getImei(me->modMgr);
+    ModCmd_getImei(me->modMgr, RKH_UPCAST(RKH_SMA_T,me));
 }
 
 static void
@@ -938,13 +963,13 @@ cipShutdown(ConMgr *const me)
 {
     (void)me;
 
-    ModCmd_cipShutdown(me->modMgr);
+    ModCmd_cipShutdown(me->modMgr, RKH_UPCAST(RKH_SMA_T,me));
 }
 
 static void 
 unregEntry(ConMgr *const me)
 {
-    ModCmd_getRegStatus(me->modMgr);
+    ModCmd_getRegStatus(me->modMgr, RKH_UPCAST(RKH_SMA_T,me));
 
     RKH_SET_STATIC_EVENT(&e_tout, evTimeout);
     RKH_TMR_ONESHOT(&me->timer, RKH_UPCAST(RKH_SMA_T, me), CHECK_REG_PERIOD);
@@ -957,7 +982,7 @@ static void
 regEntry(ConMgr *const me)
 {
 
-    bsp_regStatus(RegisteredSt);
+    bsp_regStatus(me->index, RegisteredSt);
 }
 
 static void 
@@ -965,7 +990,7 @@ failureEntry(ConMgr *const me)
 {
     RKH_SET_STATIC_EVENT(&e_tout, evTimeout);
     RKH_TMR_ONESHOT(&me->timer, RKH_UPCAST(RKH_SMA_T, me), FAILURE_TRY_DELAY);
-    modPwr_off();
+    modPwr_off(me->modPwrIndex);
 }
 
 static void
@@ -980,7 +1005,7 @@ setupManualGet(ConMgr *const me)
 {
     (void)me;
 
-    ModCmd_setManualGet(me->modMgr);
+    ModCmd_setManualGet(me->modMgr, RKH_UPCAST(RKH_SMA_T,me));
 }
    
 static void
@@ -995,7 +1020,7 @@ getOper(ConMgr *const me)
 {
     (void)me;
 
-    ModCmd_getOper(me->modMgr);
+    ModCmd_getOper(me->modMgr, RKH_UPCAST(RKH_SMA_T,me));
 }
    
 static void
@@ -1005,7 +1030,7 @@ setupAPN(ConMgr *const me)
     (void)me;
 
     apn = getAPNbyOper(me->Oper);
-    ModCmd_setupAPN(me->modMgr, apn->addr, apn->usr, apn->psw);
+    ModCmd_setupAPN(me->modMgr, RKH_UPCAST(RKH_SMA_T,me), apn->addr, apn->usr, apn->psw);
 }
    
 static void
@@ -1013,7 +1038,7 @@ startGPRS(ConMgr *const me)
 {
     (void)me;
 
-    ModCmd_startGPRS(me->modMgr);
+    ModCmd_startGPRS(me->modMgr, RKH_UPCAST(RKH_SMA_T,me));
 }
 
 static void
@@ -1021,7 +1046,7 @@ getConnStatus(ConMgr *const me)
 {
     (void)me;
 
-    ModCmd_getConnStatus(me->modMgr);
+    ModCmd_getConnStatus(me->modMgr, RKH_UPCAST(RKH_SMA_T,me));
 }
 
 static void
@@ -1045,8 +1070,9 @@ socketConnected(ConMgr *const me)
     (void)me;
 
     me->retryCount = 0;
-    RKH_SMA_POST_FIFO(mqttProt, &e_NetConnected, conMgr);
-    bsp_netStatus(ConnectedSt);
+    RKH_SET_STATIC_EVENT(RKH_UPCAST(RKH_EVT_T, &(me->fromConMgrEvt)), evNetConnected);
+    RKH_SMA_POST_FIFO(mqttProt, RKH_UPCAST(RKH_EVT_T, &(me->fromConMgrEvt)), me);
+    bsp_netStatus(me->index, ConnectedSt);
 }
 
 static void
@@ -1087,19 +1113,19 @@ setInitTimeOut(ConMgr *const me)
 static void
 errorReport(ConMgr *const me)
 {
-    ModCmd_errorReport(me->modMgr);
+    ModCmd_errorReport(me->modMgr, RKH_UPCAST(RKH_SMA_T,me));
 }
 
 static void
 initGps(ConMgr *const me)
 {
-    ModCmd_startGPS(me->modMgr);
+    ModCmd_startGPS(me->modMgr, RKH_UPCAST(RKH_SMA_T,me));
 }
 
 static void
 getGps(ConMgr *const me)
 {
-    ModCmd_getGPS(me->modMgr);
+    ModCmd_getGPS(me->modMgr, RKH_UPCAST(RKH_SMA_T,me));
 }
 
 
@@ -1114,7 +1140,7 @@ unregExit(ConMgr *const me)
 static void 
 regExit(ConMgr *const me)
 {
-    bsp_regStatus(UnregisteredSt);
+    bsp_regStatus(me->index, UnregisteredSt);
 }
 
 static void
@@ -1128,7 +1154,7 @@ failureExit(ConMgr *const me)
 {
     (void)me;
 
-    modPwr_on();
+    modPwr_on(me->modPwrIndex);
     ModCmd_init(sim808parser_getSSP(me->parser_index));
     rkh_tmr_stop(&me->timer);
 }
@@ -1163,8 +1189,9 @@ socketDisconnected(ConMgr *const me)
 {
     (void)me;
 
-    RKH_SMA_POST_FIFO(mqttProt, &e_NetDisconnected, conMgr);
-    bsp_netStatus(DisconnectedSt);
+    RKH_SET_STATIC_EVENT(RKH_UPCAST(RKH_EVT_T, &(me->fromConMgrEvt)), evNetDisconnected);
+    RKH_SMA_POST_FIFO(mqttProt, RKH_UPCAST(RKH_EVT_T, &(me->fromConMgrEvt)), me);
+    bsp_netStatus(me->index, DisconnectedSt);
 }
 
 static void
@@ -1180,7 +1207,7 @@ getStatusExit(ConMgr *const me)
 {
     (void)me;
 
-    rkh_sma_recall((RKH_SMA_T *)me, &qDefer);
+    rkh_sma_recall((RKH_SMA_T *)me, &(me->qDefer));
 }
 
 /* ................................ Guards ................................. */
@@ -1218,36 +1245,55 @@ checkConnectedFailCounter(ConMgr *const me, RKH_EVT_T *pe)
 
 /* ---------------------------- Global functions --------------------------- */
 ReceivedEvt *
-ConMgr_ReceiveDataGetRef(void)
+ConMgr_ReceiveDataGetRef(ConMgrIndex index)
 {
-    return &e_Received;
+    ConMgr * me = RKH_DOWNCAST(ConMgr, conMgr_GetConMgr(index));
+    if(me != NULL){
+        return &(me->receivedEvt);
+    }
+    return NULL;
 }
 
 char *
-ConMgr_imei(void)
+ConMgr_imei(ConMgrIndex index)
 {
-    ConMgr *me;
-
-    me = RKH_UPCAST(ConMgr, conMgr); 
-    return me->Imei;
+    ConMgr * me = RKH_DOWNCAST(ConMgr, conMgr_GetConMgr(index));
+    if(me != NULL){
+        return me->Imei;
+    }
+    return NULL;
 }
 
 char *
-ConMgr_imeiSNR(void)
+ConMgr_imeiSNR(ConMgrIndex index)
 {
-    ConMgr *me;
-
-    me = RKH_UPCAST(ConMgr, conMgr); 
-    return (me->Imei + IMEI_SNR_OFFSET);
+    ConMgr * me = RKH_DOWNCAST(ConMgr, conMgr_GetConMgr(index));
+    if(me != NULL){
+        return (me->Imei + IMEI_SNR_OFFSET);
+    }
+    return NULL;
 }
 
 int
-ConMgr_sigLevel(void)
+ConMgr_sigLevel(ConMgrIndex index)
 {
-    ConMgr *me;
+    ConMgr * me = RKH_DOWNCAST(ConMgr, conMgr_GetConMgr(index));
+    if(me != NULL){
+        return me->sigLevel;
+    }
+    return 0;
+}
 
-    me = RKH_UPCAST(ConMgr, conMgr); 
-    return me->sigLevel;
+RKH_SMA_T* conMgr_GetConMgr(ConMgrIndex index){
+    switch (index){
+        case CON_MGR_A_INDEX:
+            return RKH_UPCAST(RKH_SMA_T,CON_MGR_A);
+        case CON_MGR_B_INDEX:
+            return RKH_UPCAST(RKH_SMA_T,CON_MGR_B);
+        default:
+            break;
+    }
+    return NULL;
 }
 
 /* ------------------------------ End of file ------------------------------ */

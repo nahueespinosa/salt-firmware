@@ -113,7 +113,8 @@ struct ModMgr
     RKH_QUEUE_T qDefer;
     ModMgrEvt *qDefer_sto[SIZEOF_QDEFER];
 
-    enum MOD_MGR_INDEX index;
+    ModMgrIndex index;
+    ConMgrIndex conMgrIndex;
 };
 
 RKH_SMA_CREATE(ModMgr, modMgrA, MOD_MGR_A_PRIORITY, HCAL, &ModMgr_inactive, initialization, NULL);
@@ -192,9 +193,11 @@ initialization(ModMgr *const me, RKH_EVT_T *pe)
     me->index = MOD_MGR_NONE_INDEX;
     if (RKH_UPCAST(RKH_SMA_T, me) == MOD_MGR_A){
         me->index = MOD_MGR_A_INDEX;
+        me->conMgrIndex = CON_MGR_A_INDEX;
     }
     if (RKH_UPCAST(RKH_SMA_T, me) == MOD_MGR_B){
         me->index = MOD_MGR_B_INDEX;
+        me->conMgrIndex = CON_MGR_B_INDEX;
     }
 
     modMgr_ChannelOpen(me->index);
@@ -214,7 +217,7 @@ notifyURC(ModMgr *const me, RKH_EVT_T *pe)
 {
     (void)me;
 
-    forwardModMgrEvt(me, conMgr, pe);
+    forwardModMgrEvt(me, conMgr_GetConMgr(me->conMgrIndex), pe);
 }
 
 static void
@@ -250,7 +253,9 @@ sendData(ModMgr *const me, RKH_EVT_T *pe)
 static void
 sendResponse(ModMgr *const me, RKH_EVT_T *pe)
 {
-    forwardModMgrEvt(me, (RKH_SMA_T *)*(me->pCmd->args.aoDest), pe);
+
+
+    forwardModMgrEvt(me, RKH_UPCAST(RKH_SMA_T, conMgr_GetConMgr(me->conMgrIndex)), pe);
     bsp_modStatusToggle(me->index);
 }
 
@@ -259,8 +264,7 @@ noResponse(ModMgr *const me, RKH_EVT_T *pe)
 {
     (void)pe;
     
-    RKH_SMA_POST_FIFO((RKH_SMA_T *)*(me->pCmd->args.aoDest), 
-                            &e_noResp, me);
+    RKH_SMA_POST_FIFO(RKH_UPCAST(RKH_SMA_T, conMgr_GetConMgr(me->conMgrIndex)),&e_noResp, me);
 
     RKH_FWK_GC(RKH_CAST(RKH_EVT_T, me->pCmd), me);
 }
@@ -313,4 +317,15 @@ isDataCmd(ModMgr *const me, RKH_EVT_T *pe)
 }
 
 /* ---------------------------- Global functions --------------------------- */
+RKH_SMA_T* modMgr_GetModMgr(ModMgrIndex index){
+    switch (index){
+        case MOD_MGR_A_INDEX:
+            return RKH_UPCAST(RKH_SMA_T,MOD_MGR_A);
+        case MOD_MGR_B_INDEX:
+            return RKH_UPCAST(RKH_SMA_T,MOD_MGR_B);
+        default:
+            break;
+    }
+    return NULL;
+}
 /* ------------------------------ End of file ------------------------------ */

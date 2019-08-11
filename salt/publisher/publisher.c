@@ -41,7 +41,7 @@ rui16_t
 publishDimba(AppData *appMsg)
 {
     jwOpen( dataBuf, sizeof(dataBuf), JW_OBJECT, JW_COMPACT );
-    jwObj_int("id", atoi(ConMgr_imeiSNR()));
+    jwObj_int("id", atoi(ConMgr_imeiSNR(appMsg->conMgrIndex)));
     jwClose();
 
     appMsg->data = (rui8_t *)dataBuf;

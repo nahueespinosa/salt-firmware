@@ -59,7 +59,7 @@
 /* ---------------------------- Global variables --------------------------- */
 /* ---------------------------- Local variables ---------------------------- */
 static RKH_EVT_T *MQTTProt_qsto[MQTTPROT_QSTO_SIZE];
-static RKH_EVT_T *ConMgr_qsto[CONMGR_QSTO_SIZE];
+static RKH_EVT_T *ConMgr_qsto[NUM_CON_MGR][CONMGR_QSTO_SIZE];
 static RKH_EVT_T *ModMgr_qsto[NUM_MOD_MGR][MODMGR_QSTO_SIZE];
 static rui8_t evPool0Sto[SIZEOF_EP0STO],
         evPool1Sto[SIZEOF_EP1STO],
@@ -142,8 +142,8 @@ saltConfig(void)
 
     /* Conexion de modulos */
 
-    simACmdParser = ModCmd_init(sim808parser_initSSP(SIM_808_PARSER_A_INDEX, MOD_MGR_A));
-    simBCmdParser = ModCmd_init(sim808parser_initSSP(SIM_808_PARSER_B_INDEX, MOD_MGR_B));
+    simACmdParser = ModCmd_init(sim808parser_initSSP(SIM_808_PARSER_A_INDEX, MOD_MGR_A_INDEX, CON_MGR_A_INDEX));
+    simBCmdParser = ModCmd_init(sim808parser_initSSP(SIM_808_PARSER_B_INDEX, MOD_MGR_B_INDEX, CON_MGR_B_INDEX));
 
 }
 
@@ -167,7 +167,8 @@ setupTraceFilters(void)
     //RKH_FILTER_OFF_EVENT(RKH_TE_SM_DCH);
     RKH_FILTER_OFF_SMA(MOD_MGR_A);
     RKH_FILTER_OFF_SMA(MOD_MGR_B);
-    RKH_FILTER_OFF_SMA(conMgr);
+    RKH_FILTER_OFF_SMA(CON_MGR_A);
+    RKH_FILTER_OFF_SMA(CON_MGR_B);
     RKH_FILTER_OFF_SMA(mqttProt);
     RKH_FILTER_OFF_ALL_SIGNALS();
 }
@@ -175,7 +176,7 @@ setupTraceFilters(void)
 /* ---------------------------- Global functions --------------------------- */
 
 
-void modMgr_ChannelOpen(enum MOD_MGR_INDEX index){
+void modMgr_ChannelOpen(ModMgrIndex index){
     switch (index){
         case MOD_MGR_A_INDEX:
             sim808Init(SIM_808_A);
@@ -190,11 +191,11 @@ void modMgr_ChannelOpen(enum MOD_MGR_INDEX index){
     }
 }
 
-void modMgr_ChannelClose(enum MOD_MGR_INDEX index){
+void modMgr_ChannelClose(ModMgrIndex index){
 
 }
 
-void modMgr_Puts(enum MOD_MGR_INDEX index, char *p){
+void modMgr_Puts(ModMgrIndex index, char *p){
 #ifdef DEBUG_SERIAL_PASS
     serialPutByte(UART_DEBUG,'#');
     serialPutString(UART_DEBUG,p);
@@ -212,7 +213,7 @@ void modMgr_Puts(enum MOD_MGR_INDEX index, char *p){
     }
 }
 
-void modMgr_Putnchar(enum MOD_MGR_INDEX index, unsigned char *p, ruint ndata){
+void modMgr_Putnchar(ModMgrIndex index, unsigned char *p, ruint ndata){
 #ifdef DEBUG_SERIAL_PASS
     serialPutByte(UART_DEBUG,'#');
     serialPutChars(UART_DEBUG, p, ndata);
@@ -239,7 +240,7 @@ saltCfg_clientId(char *pid)
 void
 saltCfg_topic(char *t)
 {
-    sprintf(mqttProtCfg.topic, "/salt/%s", t);
+    sprintf(mqttProtCfg.topic, "/salt/data");
     sprintf(mqttProtCfg.subTopic, "/salt/cmd");
 }
 
@@ -273,14 +274,20 @@ main(int argc, char *argv[])
 
     rInt cn;
 
-    RKH_SMA_ACTIVATE(conMgr, ConMgr_qsto, CONMGR_QSTO_SIZE, 0, 0);
+    for (cn = 0; cn < NUM_CON_MGR; ++cn)
+    {
+        RKH_SMA_ACTIVATE(CON_MGR_LIST(cn), ConMgr_qsto[cn], CONMGR_QSTO_SIZE, NULL, 0);
+    }
     for (cn = 0; cn < NUM_MOD_MGR; ++cn)
     {
         RKH_SMA_ACTIVATE(MOD_MGR_LIST(cn), ModMgr_qsto[cn], MODMGR_QSTO_SIZE, NULL, 0);
     }
     RKH_SMA_ACTIVATE(mqttProt, MQTTProt_qsto, MQTTPROT_QSTO_SIZE, 0, 0);
 
-    RKH_SMA_POST_FIFO(conMgr, &e_Open, 0);
+    for (cn = 0; cn < NUM_CON_MGR; ++cn)
+    {
+        RKH_SMA_POST_FIFO(CON_MGR_LIST(cn), &e_Open, 0);
+    }
 
     rkh_fwk_enter();
 

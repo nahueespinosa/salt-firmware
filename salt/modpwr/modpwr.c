@@ -22,16 +22,16 @@
 #include "mTimeCfg.h"
 #include "sim808.h"
 /* ----------------------------- Local macros ------------------------------ */
-#define PwrKey_init()
-#define PwrKey(b)           sim808SetControlPin( SIM_808_A,  SIM_808_PWRKEY, !b)
-#define Power_init()
-#define Power(b)            sim808SetControlPin( SIM_808_A,  SIM_808_VC, b)
+#define PwrKey_init(sim808)
+#define PwrKey(sim808, b)           sim808SetControlPin( (sim808),  SIM_808_PWRKEY, !(b))
+#define Power_init(sim808)
+#define Power(sim808,b)            sim808SetControlPin( (sim808),  SIM_808_VC, (b))
 
-#define modPwr_toggle() \
+#define modPwr_toggle(modPwr) \
         { \
             RKH_ENTER_CRITICAL(); \
-            counter = SIM808_PWR_TIME; \
-            state = Toggling; \
+            modPwr.counter = SIM808_PWR_TIME; \
+            modPwr.state = Toggling; \
             RKH_EXIT_CRITICAL(); \
         }
 
@@ -45,9 +45,29 @@ typedef enum ModPwrStates
     Toggling
 }ModPwrStates;
 
+typedef struct ModPwr ModPwr;
+struct ModPwr
+{
+    Sim808_t sim808;
+    ModPwrStates state;
+    ruint counter;
+};
+
 /* ---------------------------- Global variables --------------------------- */
 /* ---------------------------- Local variables ---------------------------- */
-static ruint state, counter;
+static ModPwr modPwrTable[] =
+    {
+        {
+            SIM_808_A,
+            OnOff,
+            0
+            },
+        {
+            SIM_808_B,
+            OnOff,
+            0
+        }
+    };
 
 /* ----------------------- Local function prototypes ----------------------- */
 /* ---------------------------- Local functions ---------------------------- */
@@ -55,46 +75,51 @@ static ruint state, counter;
 void
 modPwr_init(void)
 {
-    PwrKey_init();
-    PwrKey(1);
-    Power_init();
-    Power(0);
-    state = OnOff;
+    for (int j = 0; j < ModPwrCount; ++j) {
+        PwrKey_init(modPwrTable[j].sim808);
+        PwrKey(modPwrTable[j].sim808, 1);
+        Power(modPwrTable[j].sim808, 0);
+        Power_init(modPwrTable[j].sim808);
+        modPwrTable[j].state = OnOff;
+    }
 }
 
 void
 modPwr_ctrl(void)
 {
-    switch(state)
-    {
-        case OnOff:
-            PwrKey(1);
-            break;
+    for (int j = 0; j < ModPwrCount; ++j) {
+        switch(modPwrTable[j].state)
+        {
+            case OnOff:
+                PwrKey(modPwrTable[j].sim808,1);
+                break;
 
-        case Toggling:
-            PwrKey(0);
-            if(counter && (--counter == 0))
-            {
-                state = OnOff;
-            }
+            case Toggling:
+                PwrKey(modPwrTable[j].sim808, 0);
+                if(modPwrTable[j].counter && (--(modPwrTable[j].counter) == 0))
+                {
+                    modPwrTable[j].state = OnOff;
+                }
 
-            break;
+                break;
+        }
     }
+
 }
 
 
 void
-modPwr_off(void)
+modPwr_off(ModPwrIndex index)
 {
-    Power(0);
-    modPwr_toggle();
+    Power(modPwrTable[index].sim808, 0);
+    modPwr_toggle(modPwrTable[index]);
 }
 
 void
-modPwr_on(void)
+modPwr_on(ModPwrIndex index)
 {
-    Power(1);
-    modPwr_toggle();
+    Power(modPwrTable[index].sim808, 1);
+    modPwr_toggle(modPwrTable[index]);
 }
 
 /* ------------------------------ End of file ------------------------------ */

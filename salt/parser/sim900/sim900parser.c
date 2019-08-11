@@ -42,7 +42,8 @@ typedef struct SSP_SIM808 SSP_SIM808;
 struct SSP_SIM808
 {
     SSP ssp;       /* base structure */
-    RKH_SMA_T* modMgr;
+    ModMgrIndex modMgrIndex;
+    ConMgrIndex conMgrIndex;
 
     rui8_t isURC;
 
@@ -597,7 +598,7 @@ sendModResp_noArgs(SSP_SIM808 *const me, RKH_SIG_T sig)
 
     p = RKH_ALLOC_EVT( ModMgrResp, ModMgrSignal, &sim900parser );
     p->fwdEvt = sig;
-    RKH_SMA_POST_FIFO(me->modMgr, RKH_UPCAST(RKH_EVT_T, p), &sim900parser );
+    RKH_SMA_POST_FIFO(modMgr_GetModMgr(me->modMgrIndex), RKH_UPCAST(RKH_EVT_T, p), &sim900parser );
 }
 
 static void
@@ -741,7 +742,7 @@ data_init(SSP_SIM808 *const me, unsigned char c)
 {
     (void)c;
 
-    me->precv = ConMgr_ReceiveDataGetRef();
+    me->precv = ConMgr_ReceiveDataGetRef(me->conMgrIndex);
     me->precv->size = 0;
     me->prx = me->precv->buf;
 }
@@ -867,7 +868,7 @@ lTimeGet(SSP_SIM808 *const me, unsigned char pos)
 
     me->localTimeEvt.e.fwdEvt = evLocalTime;
         
-    RKH_SMA_POST_FIFO(me->modMgr, RKH_UPCAST(RKH_EVT_T, &(me->localTimeEvt)),
+    RKH_SMA_POST_FIFO(modMgr_GetModMgr(me->modMgrIndex), RKH_UPCAST(RKH_EVT_T, &(me->localTimeEvt)),
 						      &sim900parser);
 
 }
@@ -903,7 +904,7 @@ imeiSet(SSP_SIM808 *const me, unsigned char pos)
 
     me->imeiEvt.e.fwdEvt = evImei;
         
-    RKH_SMA_POST_FIFO(me->modMgr, RKH_UPCAST(RKH_EVT_T, &(me->imeiEvt)),
+    RKH_SMA_POST_FIFO(modMgr_GetModMgr(me->modMgrIndex), RKH_UPCAST(RKH_EVT_T, &(me->imeiEvt)),
 						      &sim900parser);
 }
 
@@ -938,7 +939,7 @@ copsSet(SSP_SIM808 *const me, unsigned char pos)
 
     me->copsEvt.e.fwdEvt = evOper;
         
-    RKH_SMA_POST_FIFO(me->modMgr, RKH_UPCAST(RKH_EVT_T, &(me->copsEvt)),
+    RKH_SMA_POST_FIFO(modMgr_GetModMgr(me->modMgrIndex), RKH_UPCAST(RKH_EVT_T, &(me->copsEvt)),
 						      &sim900parser);
 }
 
@@ -974,7 +975,7 @@ csqSet(SSP_SIM808 *const me, unsigned char pos)
 
     me->sigLevelEvt.e.fwdEvt = evSigLevel;
         
-    RKH_SMA_POST_FIFO(me->modMgr, RKH_UPCAST(RKH_EVT_T, &(me->sigLevelEvt)),
+    RKH_SMA_POST_FIFO(modMgr_GetModMgr(me->modMgrIndex), RKH_UPCAST(RKH_EVT_T, &(me->sigLevelEvt)),
 						      &sim900parser);
 }
 
@@ -1149,7 +1150,7 @@ static void gpsSet(SSP_SIM808 *const me, unsigned char pos)
 
     me->gpsEvt.e.fwdEvt = evGps;
 
-    RKH_SMA_POST_FIFO(me->modMgr, RKH_UPCAST(RKH_EVT_T, &(me->gpsEvt)),
+    RKH_SMA_POST_FIFO(modMgr_GetModMgr(me->modMgrIndex), RKH_UPCAST(RKH_EVT_T, &(me->gpsEvt)),
                       &sim900parser);
 }
 
@@ -1188,7 +1189,7 @@ void sim808parser_doSearch(SSP* parser, unsigned char c)
     recCmdCollect(RKH_DOWNCAST(SSP_SIM808,parser), c);
     ssp_doSearch(parser, c);
 }
-SSP * sim808parser_getSSP(enum SIM_808_PARSER_INDEX index){
+SSP * sim808parser_getSSP(Sim808ParserIndex index){
     switch (index){
         case SIM_808_PARSER_A_INDEX:
             return RKH_UPCAST(SSP,&sim808AParser);
@@ -1199,7 +1200,7 @@ SSP * sim808parser_getSSP(enum SIM_808_PARSER_INDEX index){
     }
     return NULL;
 }
-SSP * sim808parser_initSSP(enum SIM_808_PARSER_INDEX index, RKH_SMA_T* modMgr){
+SSP * sim808parser_initSSP(Sim808ParserIndex index, ModMgrIndex modMgrIndex, ConMgrIndex conMgrIndex){
     SSP_SIM808 * result = NULL;
     switch (index){
         case SIM_808_PARSER_A_INDEX:
@@ -1212,7 +1213,8 @@ SSP * sim808parser_initSSP(enum SIM_808_PARSER_INDEX index, RKH_SMA_T* modMgr){
             break;
     }
     if(result != NULL){
-        result->modMgr = modMgr;
+        result->modMgrIndex = modMgrIndex;
+        result->conMgrIndex = conMgrIndex;
     }
     return RKH_UPCAST(SSP,result);
 }

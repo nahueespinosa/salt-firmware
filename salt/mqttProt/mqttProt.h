@@ -21,6 +21,7 @@
 #define __MQTTPROT_H__
 
 /* ----------------------------- Include files ----------------------------- */
+#include <conmgr/conmgr.h>
 #include "rkh.h"
 #include "mqtt.h"
 
@@ -43,6 +44,7 @@ struct AppData
 {
     rui8_t *data;
     rui16_t size;
+    ConMgrIndex conMgrIndex;
 };
 
 typedef rui16_t (*MQTTProtPublish)(AppData *appMsg);

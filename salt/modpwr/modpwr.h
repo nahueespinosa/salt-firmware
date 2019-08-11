@@ -27,14 +27,20 @@ extern "C" {
 /* --------------------------------- Macros -------------------------------- */
 /* -------------------------------- Constants ------------------------------ */
 /* ------------------------------- Data types ------------------------------ */
+typedef enum ModPwrIndex
+{
+    ModPwrA,
+    ModPwrB,
+    ModPwrCount,
+}ModPwrIndex;
 /* -------------------------- External variables --------------------------- */
 /* -------------------------- Function prototypes -------------------------- */
 #ifdef MODPWR_CTRL_ENABLE
 
 void modPwr_init(void);
 void modPwr_ctrl(void);
-void modPwr_on(void);
-void modPwr_off(void);
+void modPwr_on(ModPwrIndex index);
+void modPwr_off(ModPwrIndex index);
 
 #else
 

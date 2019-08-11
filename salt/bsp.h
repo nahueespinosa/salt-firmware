@@ -84,8 +84,8 @@ void bsp_serial_close(int ch);
 void bsp_serial_puts(int ch, char *p);
 void bsp_serial_putnchar(int ch, unsigned char *p, ruint ndata);
 
-void bsp_regStatus(Status_t status);
-void bsp_netStatus(Status_t status);
+void bsp_regStatus(int ch, Status_t status);
+void bsp_netStatus(int ch, Status_t status);
 void bsp_modStatus(int ch, Status_t status);
 void bsp_modStatusToggle(int ch);
 

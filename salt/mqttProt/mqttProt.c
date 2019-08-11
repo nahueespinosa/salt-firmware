@@ -43,7 +43,7 @@ RKH_DCLR_BASIC_STATE Sync_Idle, Sync_WaitSync, Sync_Receiving,
 RKH_DCLR_COMP_STATE Sync_Active, Client_Connected;
 RKH_DCLR_CHOICE_STATE Sync_C10, Sync_C12, Sync_C14, Sync_C25, Sync_C31,
                       Sync_C32, Sync_C36, Sync_C38,
-                      Client_C7, Client_C15, Client_C20;
+                      Client_C7, Client_C15, Client_C20, Client_C1;
 
 /* ........................ Declares initial action ........................ */
 static void init(MQTTProt *const me, RKH_EVT_T *pe);
@@ -66,6 +66,9 @@ static void endSendAll(SyncRegion *const me, RKH_EVT_T *pe);
 static void nextSend(SyncRegion *const me, RKH_EVT_T *pe);
 static void handleRecvMsg(SyncRegion *const me, RKH_EVT_T *pe);
 static void activateSync(MQTTProt *const me, RKH_EVT_T *pe);
+static void onConnect(MQTTProt *const me, RKH_EVT_T *pe);
+static void onChangeConnected(MQTTProt *const me, RKH_EVT_T *pe);
+static void onDisconnect(MQTTProt *const me, RKH_EVT_T *pe);
 static void releaseUse(SyncRegion *const me, RKH_EVT_T *pe);
 static void deactivateSync(MQTTProt *const me, RKH_EVT_T *pe);
 static void reconnect(SyncRegion *const me, RKH_EVT_T *pe);
@@ -96,6 +99,9 @@ static rbool_t isNotResend(const RKH_SM_T *me, RKH_EVT_T *pe);
 static rbool_t isSetMsgStateOk(const RKH_SM_T *me, RKH_EVT_T *pe);
 static rbool_t isLocked(const RKH_SM_T *me, RKH_EVT_T *pe);
 static rbool_t isReconnect(const RKH_SM_T *me, RKH_EVT_T *pe);
+static rbool_t isDisconnectCurrent(const RKH_SM_T *me, RKH_EVT_T *pe);
+static rbool_t isAnyConnected(const RKH_SM_T *me, RKH_EVT_T *pe);
+static rbool_t isDisconnectNotCurrent(const RKH_SM_T *me, RKH_EVT_T *pe);
 
 /* ........................ States and pseudostates ........................ */
 RKH_CREATE_BASIC_STATE(Sync_Idle, NULL, NULL, RKH_ROOT, NULL);
@@ -136,6 +142,7 @@ RKH_END_TRANS_TABLE
 
 RKH_CREATE_BASIC_STATE(Client_Idle, NULL, NULL, RKH_ROOT, NULL);
 RKH_CREATE_TRANS_TABLE(Client_Idle)
+    RKH_TRINT(evNetDisconnected, NULL, onDisconnect),
     RKH_TRREG(evNetConnected, NULL, activateSync, &Client_Connected),
 RKH_END_TRANS_TABLE
 
@@ -143,9 +150,17 @@ RKH_CREATE_COMP_REGION_STATE(Client_Connected, NULL, NULL, RKH_ROOT,
                              &Client_C15, NULL,
                              RKH_NO_HISTORY, NULL, NULL, NULL, NULL);
 RKH_CREATE_TRANS_TABLE(Client_Connected)
-    RKH_TRREG(evNetDisconnected, NULL, NULL, &Client_Idle),
+    RKH_TRINT(evNetConnected, NULL, onConnect),
+    RKH_TRINT(evNetDisconnected, isDisconnectNotCurrent, onDisconnect),
+    RKH_TRREG(evNetDisconnected, isDisconnectCurrent, onDisconnect, &Client_C1),
     RKH_TRCOMPLETION(NULL, deactivateSync, &Client_Idle),
 RKH_END_TRANS_TABLE
+
+RKH_CREATE_CHOICE_STATE(Client_C1);
+RKH_CREATE_BRANCH_TABLE(Client_C1)
+                RKH_BRANCH(isAnyConnected, onChangeConnected, &Client_C15),
+                RKH_BRANCH(ELSE,     NULL, &Client_Idle),
+RKH_END_BRANCH_TABLE
 
 RKH_CREATE_BASIC_STATE(Client_TryConnect, brokerConnect, NULL, 
                        &Client_Connected, NULL);
@@ -267,6 +282,10 @@ struct MQTTProt
     MQTTProtCfg *config;
     MQTTProtPublish publisher;
     const char *errorStr;
+
+    ConMgrIndex currentConMgrIndex;
+    bool_t conMgrIndexConnected[NUM_CON_MGR];
+    RKH_TMR_T chgCurrentConMgrIndexTmr;
 };
 
 RKH_SMA_CREATE(MQTTProt, mqttProt, MQTT_PRIORITY, HCAL, &Client_Idle, init, NULL);
@@ -426,6 +445,8 @@ init(MQTTProt *const me, RKH_EVT_T *pe)
     RKH_SET_STATIC_EVENT(RKH_UPCAST(RKH_EVT_T, &evConnRefusedObj), 
                          evConnRefused);
 
+    me->currentConMgrIndex = CON_MGR_NONE_INDEX;
+
     me->client.connack_response_callback = connack_response_callback;
     rkh_sm_init(RKH_UPCAST(RKH_SM_T, &me->itsSyncRegion));
 }
@@ -436,6 +457,8 @@ publish(MQTTProt *const me, RKH_EVT_T *pe)
 {
     AppData appMsg;
     rui16_t pubTime;
+
+    appMsg.conMgrIndex = me->currentConMgrIndex;
 
     pubTime = (*me->publisher)(&appMsg);
     if (pubTime != 0)
@@ -589,9 +612,40 @@ handleRecvMsg(SyncRegion *const me, RKH_EVT_T *pe)
 static void 
 activateSync(MQTTProt *const me, RKH_EVT_T *pe)
 {
+    onConnect(me,pe);
+
     RKH_SMA_POST_FIFO(RKH_UPCAST(RKH_SMA_T, me), 
                       RKH_UPCAST(RKH_EVT_T, &evActivateObj), 
                       me);
+}
+
+static void onConnect(MQTTProt *const me, RKH_EVT_T *pe){
+    FromConMgrEvt * p = RKH_DOWNCAST(FromConMgrEvt, pe);
+
+    (me->conMgrIndexConnected)[p->conMgrIndex] = true;
+    if(me->currentConMgrIndex == CON_MGR_NONE_INDEX){
+        me->currentConMgrIndex = p->conMgrIndex;
+    }
+}
+
+static void onChangeConnected(MQTTProt *const me, RKH_EVT_T *pe){
+    FromConMgrEvt * p = RKH_DOWNCAST(FromConMgrEvt, pe);
+
+    for (int i = 0; i < NUM_CON_MGR; ++i) {
+        if((me->conMgrIndexConnected)[i]){
+            me->currentConMgrIndex = i;
+        }
+    }
+
+}
+
+static void onDisconnect(MQTTProt *const me, RKH_EVT_T *pe){
+    FromConMgrEvt * p = RKH_DOWNCAST(FromConMgrEvt, pe);
+
+    (me->conMgrIndexConnected)[p->conMgrIndex] = false;
+    if(me->currentConMgrIndex == p->conMgrIndex){
+        me->currentConMgrIndex = CON_MGR_NONE_INDEX;
+    }
 }
 
 static void 
@@ -619,7 +673,7 @@ reconnect(SyncRegion *const me, RKH_EVT_T *pe)
     MQTTProt *realMe;
 
     realMe = me->itsMQTTProt;
-    RKH_SMA_POST_FIFO(conMgr, &evRestartObj, realMe);
+    RKH_SMA_POST_FIFO(conMgr_GetConMgr(realMe->currentConMgrIndex), &evRestartObj, realMe);
 }
 
 static void 
@@ -673,7 +727,7 @@ recvAll(SyncRegion *const me, RKH_EVT_T *pe)
     MQTTProt *realMe;
 
     realMe = me->itsMQTTProt;
-    RKH_SMA_POST_FIFO(conMgr, &evRecvObj, realMe);
+    RKH_SMA_POST_FIFO(conMgr_GetConMgr(realMe->currentConMgrIndex), &evRecvObj, realMe);
 }
 
 static void 
@@ -684,7 +738,7 @@ sendAll(SyncRegion *const me, RKH_EVT_T *pe)
     realMe = me->itsMQTTProt;
     evSendObj.size = localSend.msg->size;
     memcpy(evSendObj.buf, localSend.msg->start, localSend.msg->size);
-    RKH_SMA_POST_FIFO(conMgr, RKH_UPCAST(RKH_EVT_T, &evSendObj), realMe);
+    RKH_SMA_POST_FIFO(conMgr_GetConMgr(realMe->currentConMgrIndex), RKH_UPCAST(RKH_EVT_T, &evSendObj), realMe);
 }
 
 static void 
@@ -789,6 +843,28 @@ isReconnect(const RKH_SM_T *me, RKH_EVT_T *pe)
 
     realMe = RKH_DOWNCAST(SyncRegion, me);
     return mqtt_isReconnect(&realMe->itsMQTTProt->client);
+}
+
+static rbool_t isDisconnectCurrent(const RKH_SM_T *me, RKH_EVT_T *pe){
+    FromConMgrEvt * p = RKH_DOWNCAST(FromConMgrEvt, pe);
+    MQTTProt * realMe = RKH_DOWNCAST(MQTTProt, pe);
+
+    return p->conMgrIndex == realMe->currentConMgrIndex;
+}
+
+static rbool_t isAnyConnected(const RKH_SM_T *me, RKH_EVT_T *pe){
+    MQTTProt * realMe = RKH_DOWNCAST(MQTTProt, pe);
+
+    for (int i = 0; i < NUM_CON_MGR; ++i) {
+        if((realMe->conMgrIndexConnected)[i]){
+            return true;
+        }
+    }
+    return false;
+}
+
+static rbool_t isDisconnectNotCurrent(const RKH_SM_T *me, RKH_EVT_T *pe){
+    return !isDisconnectCurrent(me,pe);
 }
 
 /* ---------------------------- Global functions --------------------------- */
