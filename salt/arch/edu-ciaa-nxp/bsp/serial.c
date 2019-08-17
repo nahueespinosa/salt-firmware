@@ -17,6 +17,7 @@
 /* ----------------------------- Include files ----------------------------- */
 #include "serial.h"
 #include "sapi.h"
+#include "bsp.h"
 
 /* ----------------------------- Local macros ------------------------------ */
 /* ------------------------------- Constants ------------------------------- */
@@ -35,9 +36,14 @@
 #define UART_SIM_808_A_IRQ          USART3_IRQn
 #define UART_SIM_808_A_IRQ_HANDLER  UART3_IRQHandler
 
-#define UART_DEBUG_LPC          LPC_USART2  /* UART2 (RS232) */
 #define UART_DEBUG_BAUDRATE     19200
+#ifdef DEBUG_SERIAL_ARDUINO
+#define UART_DEBUG_LPC          LPC_USART3  /* UART3 (RS232) */
+#define UART_DEBUG_IRQ          USART3_IRQn
+#else
+#define UART_DEBUG_LPC          LPC_USART2  /* UART2 (RS232) */
 #define UART_DEBUG_IRQ          USART2_IRQn
+#endif
 
 #define UART_SIM_808_B_OR_DEBUG_IRQ_HANDLER  UART2_IRQHandler
 /* ---------------------------- Local data types --------------------------- */
@@ -107,13 +113,22 @@ void serialInit(serialMap_t serialMap){
             Chip_UART_SetBaud(UART_DEBUG_LPC, UART_DEBUG_BAUDRATE);  /* Set Baud rate */
             Chip_UART_SetupFIFOS(UART_DEBUG_LPC, UART_FCR_FIFO_EN | UART_FCR_TRG_LEV0); /* Modify FCR (FIFO Control Register)*/
             Chip_UART_TXEnable(UART_DEBUG_LPC); /* Enable UART Transmission */
+#ifdef DEBUG_SERIAL_ARDUINO
+            Chip_SCU_PinMux(2, 3, MD_PDN, FUNC2);              /* P2_3,FUNC2: UART3_TXD */
+            Chip_SCU_PinMux(2, 4, MD_PLN|MD_EZI|MD_ZI, FUNC2); /* P2_4,FUNC2: UART3_RXD */
+#else
             Chip_SCU_PinMux(7, 1, MD_PDN, FUNC6);              /* P7_1,FUNC6: UART2_TXD */
             Chip_SCU_PinMux(7, 2, MD_PLN|MD_EZI|MD_ZI, FUNC6); /* P7_2,FUNC6: UART2_RXD */
+#endif
 
             Chip_UART_IntEnable(UART_DEBUG_LPC, UART_IER_RBRINT ); //Enable UART Rx Interrupt
             Chip_UART_IntEnable(UART_DEBUG_LPC, UART_IER_RLSINT ); // Enable UART line status interrupt
             NVIC_SetPriority(UART_DEBUG_IRQ, 6);
             NVIC_EnableIRQ(UART_DEBUG_IRQ); // Enable Interrupt for UART channel
+
+
+
+
             break;
 
 

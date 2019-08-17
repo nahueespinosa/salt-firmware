@@ -37,9 +37,10 @@ extern "C" {
 /* --------------------------------- Macros -------------------------------- */
 /* -------------------------------- Constants ------------------------------ */
 
-#define DEBUG_SERIAL
+//#define DEBUG_SERIAL
+//#define DEBUG_SERIAL_ARDUINO
 
-#define SEND_TRACE
+//#define SEND_TRACE
 //#define DEBUG_SERIAL_PASS
 
 /*

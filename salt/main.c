@@ -87,7 +87,7 @@ static void simACb(unsigned char c){
 }
 
 static void simBCb(unsigned char c){
-    simACmdParser(sim808parser_getSSP(SIM_808_PARSER_B_INDEX),c);
+    simBCmdParser(sim808parser_getSSP(SIM_808_PARSER_B_INDEX),c);
 }
 
 static void telocCb(unsigned char c){
@@ -135,9 +135,6 @@ saltConfig(void)
 #ifdef DEBUG_SERIAL
     serialInit(UART_DEBUG);
     serialSetIntCb(UART_DEBUG, debugCb);
-#else
-    sim808Init(SIM_808_B);
-    serialSetIntCb(UART_SIM_808_B, simBCb);
 #endif
 
     /* Conexion de modulos */
@@ -234,7 +231,7 @@ void modMgr_Putnchar(ModMgrIndex index, unsigned char *p, ruint ndata){
 void
 saltCfg_clientId(char *pid)
 {
-    strcpy(mqttProtCfg.clientId, pid);
+    sprintf(mqttProtCfg.clientId, "pid");
 }
 
 void
@@ -261,13 +258,14 @@ main(int argc, char *argv[])
     rkh_fwk_registerEvtPool(evPool1Sto, SIZEOF_EP1STO, SIZEOF_EP1_BLOCK);
     rkh_fwk_registerEvtPool(evPool2Sto, SIZEOF_EP2STO, SIZEOF_EP2_BLOCK);
 
-    mqttProtCfg.publishTime = MAX_PUBLISH_TIME;
+    //mqttProtCfg.publishTime = MAX_PUBLISH_TIME;
+    mqttProtCfg.publishTime = 8;
     mqttProtCfg.syncTime = 4;
     mqttProtCfg.keepAlive = 400;
     mqttProtCfg.qos = 1;
-    strcpy(mqttProtCfg.clientId, "");
-    strcpy(mqttProtCfg.topic, "");
-    strcpy(mqttProtCfg.subTopic, "");
+    sprintf(mqttProtCfg.clientId, "");
+    sprintf(mqttProtCfg.topic, "");
+    sprintf(mqttProtCfg.subTopic, "");
     mqttProtCfg.callback = onMQTTCb;
     MQTTProt_ctor(&mqttProtCfg, publishDimba);
 
