@@ -36,6 +36,7 @@
 static adc_t anIns[NUM_ANIN_SIGNALS];
 static const uint8_t chMap[NUM_ANIN_SIGNALS] = {CH1,};
 static int currChannel;
+onAnInCb_t onAnInCb;
 
 /* ----------------------- Local function prototypes ----------------------- */
 /* ---------------------------- Local functions ---------------------------- */
@@ -76,8 +77,10 @@ convertToSampleValue(adc_t sample)
 
 /* ---------------------------- Global functions --------------------------- */
 void
-anInInit(void)
+anInInit(onAnInCb_t cb)
 {
+    onAnInCb = cb;
+
     adcConfig(ADC_ENABLE);
 
     currChannel = anIn0;
@@ -94,8 +97,13 @@ anInCaptureAndFilter(void)
                                            anIns[currChannel],
                                            ANINS_EMA_ALPHA);
 
-    if(++currChannel >= NUM_ANIN_SIGNALS)
+    if(++currChannel >= NUM_ANIN_SIGNALS){
         currChannel = anIn0;
+
+        if(onAnInCb != NULL){
+            onAnInCb();
+        }
+    }
 
     anInAdcStart(currChannel);
 }

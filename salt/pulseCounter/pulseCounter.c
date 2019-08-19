@@ -1,6 +1,6 @@
 /**
- *  \file       buzzer.c
- *  \brief      buzzer driver.
+ *  \file       pulseCounter.c
+ *  \brief      Tachometer pulse counter logic.
  */
 
 /* -------------------------- Development history -------------------------- */
@@ -15,34 +15,38 @@
 
 /* --------------------------------- Notes --------------------------------- */
 /* ----------------------------- Include files ----------------------------- */
-#include "buzzer.h"
-#include "sapi.h"
+#include "pulseCounter.h"
+#include "logic.h"
+#include "signals.h"
 
 /* ----------------------------- Local macros ------------------------------ */
 /* ------------------------------- Constants ------------------------------- */
 
-#define BUZZER_PIN          GPIO4
 
 /* ---------------------------- Local data types --------------------------- */
 /* ---------------------------- Global variables --------------------------- */
 /* ---------------------------- Local variables ---------------------------- */
+float factor = 0.0;
+VelEvt externalVelEvt;
 /* ----------------------- Local function prototypes ----------------------- */
 /* ---------------------------- Local functions ---------------------------- */
+
 /* ---------------------------- Global functions --------------------------- */
-
-void buzzerInitBsp(){
-
-    // Configure Buzzer Pin
-    gpioWrite( BUZZER_PIN, false);
-    gpioConfig( BUZZER_PIN, GPIO_OUTPUT );
+void pulseCounterInit(pulseCount_t errorThr, float velFactor){
+    pulseCounterInitBsp(errorThr);
+    factor = velFactor;
+    externalVelEvt.source = VEL_SOURCE_EXTERNAL;
+    RKH_SET_STATIC_EVENT(RKH_UPCAST(RKH_EVT_T, &externalVelEvt), evVelExternal);
 }
-
-void buzzerSet(bool_t on){
-    gpioWrite( BUZZER_PIN, on);
-}
-
-bool_t buzzerGet(){
-    return gpioRead(BUZZER_PIN);
+void pulseCounterUpdate(){
+    pulseCount_t pulseCount;
+    pulseCounterGet(&pulseCount);
+    if(pulseCount != 0){
+        externalVelEvt.vel = pulseCount * factor;
+    } else {
+        externalVelEvt.vel = -1;
+    }
+    RKH_SMA_POST_FIFO(logic, RKH_UPCAST(RKH_EVT_T,&externalVelEvt), 0);
 }
 
 /* ------------------------------ End of file ------------------------------ */

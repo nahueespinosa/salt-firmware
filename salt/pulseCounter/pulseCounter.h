@@ -33,8 +33,10 @@ extern "C" {
 typedef rui32_t pulseCount_t;
 /* -------------------------- External variables --------------------------- */
 /* -------------------------- Function prototypes -------------------------- */
-void pulseCounterInit(pulseCount_t errorThr);
+void pulseCounterInit(pulseCount_t errorThr, float velFactor);
+void pulseCounterInitBsp(pulseCount_t errorThr);
 bool_t pulseCounterGet(pulseCount_t* result);
+void pulseCounterUpdate();
 
 /* -------------------- External C language linkage end -------------------- */
 #ifdef __cplusplus

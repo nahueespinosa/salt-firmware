@@ -28,6 +28,7 @@
 #include "signals.h"
 #include "rtime.h"
 #include "bsp.h"
+#include "logic.h"
 
 /* ----------------------------- Local macros ------------------------------ */
 #define SIZEOF_QDEFER   1
@@ -481,6 +482,7 @@ static RKH_ROM_STATIC_EVENT(e_Sent,     evSent);
 static RKH_ROM_STATIC_EVENT(e_SendFail, evSendFail);
 static RKH_ROM_STATIC_EVENT(e_RecvFail, evRecvFail);
 ReceivedEvt e_Received;
+VelEvt e_Vel;
 
 static RKH_QUEUE_T qDefer;
 static RKH_EVT_T *qDefer_sto[SIZEOF_QDEFER];
@@ -516,8 +518,17 @@ getAPNbyOper(char *oper)
     return defaultAPN;
 }
 
-static void defGpsCallback(GpsData *gpsData){
-    int i = 0;
+static void velEvGpsCallback(GpsData *gpsData){
+
+    if(gpsData->valid){
+        e_Vel.vel = (gpsData->speed) * ((float)KNOTS_KM_FACTOR);
+    } else {
+        e_Vel.vel = -1;
+    }
+    e_Vel.source = VEL_SOURCE_GPS;
+    RKH_SET_STATIC_EVENT(RKH_UPCAST(RKH_EVT_T, &e_Vel), evVelGPS);
+    RKH_SMA_POST_FIFO(logic, RKH_UPCAST(RKH_EVT_T, &e_Vel), conMgr);
+
 }
 
 /* ............................ Initial action ............................. */
@@ -616,8 +627,6 @@ init(ConMgr *const me, RKH_EVT_T *pe)
     RKH_TMR_INIT(&me->timer, &e_tout, NULL);
     RKH_TMR_INIT(&me->timerReg, &e_regTout, NULL);
     me->retryCount = 0;
-
-    me->gpsDataCallback = defGpsCallback;
 }
 
 /* ............................ Effect actions ............................. */
@@ -874,6 +883,8 @@ setGpsData(ConMgr *const me, RKH_EVT_T *pe)
     (void)me;
 
     p = RKH_DOWNCAST(GpsEvt, pe);
+    velEvGpsCallback(&(p->gpsData));
+
     if(me->gpsDataCallback != NULL){
         (me->gpsDataCallback)(&(p->gpsData));
     }

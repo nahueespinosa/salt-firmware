@@ -30,11 +30,20 @@ extern "C" {
 /* --------------------------------- Macros -------------------------------- */
 /* -------------------------------- Constants ------------------------------ */
 /* ------------------------------- Data types ------------------------------ */
+typedef enum BUZZER_MODE{
+    BUZZER_MODE_DISABLE,
+    BUZZER_MODE_BLINK,
+    BUZZER_MODE_CONSTANT,
+}BUZZER_MODE;
 /* -------------------------- External variables --------------------------- */
 /* -------------------------- Function prototypes -------------------------- */
 void buzzerInit();
+void buzzerInitBsp();
 void buzzerSet(bool_t on);
 bool_t buzzerGet();
+
+void buzzerSetMode(BUZZER_MODE mode);
+void buzzerUpdate();
 
 /* -------------------- External C language linkage end -------------------- */
 #ifdef __cplusplus

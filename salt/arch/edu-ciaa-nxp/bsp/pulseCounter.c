@@ -63,7 +63,7 @@ void pulseCounterEnableInt(bool_t enable){
 
 /* ---------------------------- Global functions --------------------------- */
 
-void pulseCounterInit(pulseCount_t errorThr){
+void pulseCounterInitBsp(pulseCount_t errorThr){
 
     pulseErrorThr = errorThr;
 

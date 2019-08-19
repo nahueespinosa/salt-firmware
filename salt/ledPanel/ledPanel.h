@@ -44,7 +44,9 @@ extern "C" {
 #define LED_B_MASK      (1 << LED_B_POS)
 
 #define NUM_DIGITS      4
-#define NUM_COUNT       10
+#define NUM_DASH        10
+#define NUM_COUNT       11
+#define NUM_NULL        NUM_COUNT
 
 #define DIGIT_RED_POS   0
 #define DIGIT_BLUE_POS  1
@@ -109,11 +111,12 @@ extern const rui8_t * const numeralCodes;
 extern const rui8_t * const alphaCodes;
 
 #define PERIOD_ALPHA_POS 38
+#define DASH_ALPHA_POS   37
 
 /* ------------------------------- Data types ------------------------------ */
 
 typedef enum{
-    BLACK   = 0x00,
+    LED_OFF   = 0x00,
     WHITE   = LED_R_MASK | LED_G_MASK | LED_B_MASK,
     RED     = LED_R_MASK,
     GREEN   = LED_G_MASK,

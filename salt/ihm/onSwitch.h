@@ -34,7 +34,7 @@ typedef void (* onSwitchCb_t)(bool_t activated);
 
 /* -------------------------- External variables --------------------------- */
 /* -------------------------- Function prototypes -------------------------- */
-void onSwitchInit();
+void onSwitchInit(onSwitchCb_t cb);
 bool_t onSwitchGet();
 void onSwitchSetIntCb( onSwitchCb_t cb );
 

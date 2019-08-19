@@ -85,6 +85,16 @@ enum Signals
 	evRestart,          // 49
     evInitEnd,          // 50
     evGps,              // 51
+    evSaltEnable,
+    evSaltDisable,
+    evSaltTimeoutStop,
+    evSaltTimeoutGPS,
+    evSaltTimeoutCmd,
+    evSaltCmd,
+    evVel,
+    evVelHasler,
+    evVelExternal,
+    evVelGPS,
 };
 typedef enum Signals Signals;
 

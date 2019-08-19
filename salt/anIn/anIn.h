@@ -40,9 +40,10 @@ typedef enum{
 typedef unsigned short adc_t;
 typedef double sample_t;
 
+typedef void (* onAnInCb_t)();
 /* -------------------------- External variables --------------------------- */
 /* -------------------------- Function prototypes -------------------------- */
-void anInInit(void);
+void anInInit(onAnInCb_t cb);
 
 void anInCaptureAndFilter(void);
 

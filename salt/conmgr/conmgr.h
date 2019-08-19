@@ -122,6 +122,13 @@ extern "C" {
  */
 #define INIT_PERIOD   RKH_TIME_MS(30000)
 
+
+/**
+ * knots to km/h convertion factor.
+ */
+#define KNOTS_KM_FACTOR   1.852
+
+
 /**
  * GSM Network Provider and Connection specific configurations.
  */

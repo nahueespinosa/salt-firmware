@@ -280,6 +280,11 @@
 			<locationURI>PARENT-4-PROJECT_LOC/salt/ledPanel</locationURI>
 		</link>
 		<link>
+			<name>src/salt/logic</name>
+			<type>2</type>
+			<locationURI>PARENT-4-PROJECT_LOC/salt/logic</locationURI>
+		</link>
+		<link>
 			<name>src/salt/mTime</name>
 			<type>2</type>
 			<locationURI>PARENT-4-PROJECT_LOC/salt/mTime</locationURI>
@@ -343,6 +348,11 @@
 			<name>src/salt/sim808</name>
 			<type>2</type>
 			<locationURI>PARENT-4-PROJECT_LOC/salt/sim808</locationURI>
+		</link>
+		<link>
+			<name>src/salt/teloc</name>
+			<type>2</type>
+			<locationURI>PARENT-4-PROJECT_LOC/salt/teloc</locationURI>
 		</link>
 		<link>
 			<name>src/ssp/ssp.c</name>

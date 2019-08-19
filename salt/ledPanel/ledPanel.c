@@ -85,9 +85,13 @@ void ledPanelSetCfg(LedPanelCfg* cfg){
     rui8_t aux;
 
     if(cfg->digit0 < NUM_COUNT){
-        aux = numeralCodes[cfg->digit0];
-        if(cfg->pointPosition == 0){
-            aux |= numeralCodes[PERIOD_ALPHA_POS];
+        if(cfg->digit0 == NUM_DASH){
+            aux = alphaCodes[DIGIT_CODE_DASH];
+        } else {
+            aux = numeralCodes[cfg->digit0];
+            if(cfg->pointPosition == 0){
+                aux |= numeralCodes[PERIOD_ALPHA_POS];
+            }
         }
         cfg->digit0 = aux;
     } else {
@@ -95,9 +99,13 @@ void ledPanelSetCfg(LedPanelCfg* cfg){
     }
 
     if(cfg->digit1 < NUM_COUNT){
-        aux = numeralCodes[cfg->digit1];
-        if(cfg->pointPosition == 1){
-            aux |= numeralCodes[PERIOD_ALPHA_POS];
+        if(cfg->digit1 == NUM_DASH){
+            aux = alphaCodes[DASH_ALPHA_POS];
+        } else {
+            aux = numeralCodes[cfg->digit1];
+            if(cfg->pointPosition == 1){
+                aux |= numeralCodes[PERIOD_ALPHA_POS];
+            }
         }
         cfg->digit1 = aux;
     } else {
@@ -105,9 +113,13 @@ void ledPanelSetCfg(LedPanelCfg* cfg){
     }
 
     if(cfg->digit2 < NUM_COUNT){
-        aux = numeralCodes[cfg->digit2];
-        if(cfg->pointPosition == 2){
-            aux |= numeralCodes[PERIOD_ALPHA_POS];
+        if(cfg->digit2 == NUM_DASH){
+            aux = alphaCodes[DASH_ALPHA_POS];
+        } else {
+            aux = numeralCodes[cfg->digit2];
+            if(cfg->pointPosition == 2){
+                aux |= numeralCodes[PERIOD_ALPHA_POS];
+            }
         }
         cfg->digit2 = aux;
     } else {
@@ -115,9 +127,13 @@ void ledPanelSetCfg(LedPanelCfg* cfg){
     }
 
     if(cfg->digit3 < NUM_COUNT){
-        aux = numeralCodes[cfg->digit3];
-        if(cfg->pointPosition == 3){
-            aux |= numeralCodes[PERIOD_ALPHA_POS];
+        if(cfg->digit3 == NUM_DASH){
+            aux = alphaCodes[DASH_ALPHA_POS];
+        } else {
+            aux = numeralCodes[cfg->digit3];
+            if(cfg->pointPosition == 3){
+                aux |= numeralCodes[PERIOD_ALPHA_POS];
+            }
         }
         cfg->digit3 = aux;
     } else {
