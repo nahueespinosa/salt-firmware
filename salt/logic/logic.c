@@ -28,6 +28,8 @@
 
 /* ----------------------------- Local macros ------------------------------ */
 
+#define RKH_TICK_TO_MS(tick_)      ((tick_) * RKH_TICK_RATE_MS)
+
 /* ......................... Declares active object ........................ */
 typedef struct Logic Logic;
 typedef struct LogicVel LogicVel;
@@ -147,13 +149,13 @@ RKH_END_TRANS_TABLE
 
 RKH_CREATE_COND_STATE(Logic_C1);
 RKH_CREATE_BRANCH_TABLE(Logic_C1)
-                RKH_BRANCH(guard_velDisp,   NULL,   &Logic_PreventiveStop),
+                RKH_BRANCH(guard_velDisp,   NULL,   &Logic_C2),
                 RKH_BRANCH(ELSE,           NULL,   &Logic_PreventiveStop),
 RKH_END_BRANCH_TABLE
 
 RKH_CREATE_BASIC_STATE(Logic_PreventiveStop, entry_preventiveStop, exit_preventiveStop, &Logic_Enable, NULL);
 RKH_CREATE_TRANS_TABLE(Logic_PreventiveStop)
-                RKH_TRREG(evSaltTimeoutStop, NULL, NULL, &Logic_C1),
+                RKH_TRREG(evSaltTimeoutStop, NULL, NULL, &Logic_C2),
 RKH_END_TRANS_TABLE
 
 RKH_CREATE_COND_STATE(Logic_C2);
@@ -268,7 +270,7 @@ RKH_CREATE_BASIC_STATE(LogicVel_Hasler, entry_hasler, exit_hasler, RKH_ROOT, NUL
 RKH_CREATE_TRANS_TABLE(LogicVel_Hasler)
                 RKH_TRINT(evVelHasler, guard_velRightVel, effect_velHasler),
                 RKH_TRREG(evVelHasler, guard_velWrongVel, NULL, &LogicVel_External),
-                RKH_TRREG(evTimeout, NULL, NULL, &LogicVel_External),
+                RKH_TRREG(evSaltTimeout, NULL, NULL, &LogicVel_External),
 RKH_END_TRANS_TABLE
 
 RKH_CREATE_BASIC_STATE(LogicVel_External, entry_external, exit_external, RKH_ROOT, NULL);
@@ -276,7 +278,7 @@ RKH_CREATE_TRANS_TABLE(LogicVel_External)
                 RKH_TRREG(evVelHasler, guard_velRightVel, effect_velHasler, &LogicVel_Hasler),
                 RKH_TRINT(evVelExternal, guard_velRightVel, effect_velExternal),
                 RKH_TRREG(evVelExternal, guard_velWrongVel, NULL, &LogicVel_GPS),
-                RKH_TRREG(evTimeout, NULL, NULL, &LogicVel_GPS),
+                RKH_TRREG(evSaltTimeout, NULL, NULL, &LogicVel_GPS),
 RKH_END_TRANS_TABLE
 
 RKH_CREATE_BASIC_STATE(LogicVel_GPS, entry_gps, exit_gps, RKH_ROOT, NULL);
@@ -285,7 +287,7 @@ RKH_CREATE_TRANS_TABLE(LogicVel_GPS)
                 RKH_TRREG(evVelExternal, guard_velRightVel, effect_velExternal, &LogicVel_External),
                 RKH_TRINT(evVelGPS, guard_velRightVel, effect_velGps),
                 RKH_TRREG(evVelGPS, guard_velWrongVel, NULL, &LogicVel_Missing),
-                RKH_TRREG(evTimeout, NULL, NULL, &LogicVel_Missing),
+                RKH_TRREG(evSaltTimeout, NULL, NULL, &LogicVel_Missing),
 RKH_END_TRANS_TABLE
 
 RKH_CREATE_BASIC_STATE(LogicVel_Missing, entry_missing, exit_missing, RKH_ROOT, NULL);
@@ -333,6 +335,7 @@ struct Logic
     rui8_t blinkPeriod;
 
     rui8_t blinkCount;
+    rui16_t publishPeriod;
 };
 
 RKH_SMA_CREATE(Logic, logic, 4, HCAL, &Logic_Disable, init, NULL);
@@ -343,12 +346,13 @@ RKH_SM_CONST_CREATE(logicVel, 5, HCAL, &LogicVel_Hasler, NULL, NULL);
 
 /* ---------------------------- Local data types --------------------------- */
 /* ---------------------------- Global variables --------------------------- */
+RKH_SM_T *Logic_logicVel;
 /* ---------------------------- Local variables ---------------------------- */
 
 static RKH_STATIC_EVENT(e_tOutStop, evSaltTimeoutStop);
 static RKH_STATIC_EVENT(e_tOutGps, evSaltTimeoutGPS);
 static RKH_STATIC_EVENT(e_tOutCmd, evSaltTimeoutCmd);
-static RKH_ROM_STATIC_EVENT(e_timeout, evTimeout);
+static RKH_ROM_STATIC_EVENT(e_timeout, evSaltTimeout);
 
 
 /* ----------------------- Local function prototypes ----------------------- */
@@ -421,31 +425,63 @@ static void init(Logic *const me, RKH_EVT_T *pe){
     (void)pe;
 
     RKH_TR_FWK_AO(me);
+    RKH_TR_FWK_AO(Logic_logicVel);
 
     RKH_TR_FWK_TIMER(&me->timerStop);
     RKH_TR_FWK_TIMER(&me->timerGpsEnable);
     RKH_TR_FWK_TIMER(&me->timerCmdTimeout);
-
-
+    RKH_TR_FWK_TIMER(&me->itsLogicVel.timer);
 
     RKH_TR_FWK_STATE(me, &Logic_Disable);
     RKH_TR_FWK_STATE(me, &Logic_PreventiveStop);
+    RKH_TR_FWK_STATE(me, &Logic_RemoteStop);
+    RKH_TR_FWK_STATE(me, &Logic_RemoteDrift);
+    RKH_TR_FWK_STATE(me, &Logic_RemoteIsolated);
+    RKH_TR_FWK_STATE(me, &Logic_controlAutomaticEnable);
+    RKH_TR_FWK_STATE(me, &Logic_controlAutomaticDisable);
+    RKH_TR_FWK_STATE(me, &Logic_controlAutomaticBrake);
+    RKH_TR_FWK_STATE(me, &Logic_controlBlinkEnable);
+    RKH_TR_FWK_STATE(me, &Logic_controlBlinkDisable);
+    RKH_TR_FWK_STATE(me, &Logic_controlBlinkBrake);
+    RKH_TR_FWK_STATE(me, &LogicVel_Hasler);
+    RKH_TR_FWK_STATE(me, &LogicVel_External);
+    RKH_TR_FWK_STATE(me, &LogicVel_GPS);
+    RKH_TR_FWK_STATE(me, &LogicVel_Missing);
 
     RKH_TR_FWK_STATE(me, &Logic_Enable);
+    RKH_TR_FWK_STATE(me, &Logic_remote);
+    RKH_TR_FWK_STATE(me, &Logic_automatic);
+    RKH_TR_FWK_STATE(me, &Logic_controlAutomatic);
+    RKH_TR_FWK_STATE(me, &Logic_controlBlink);
 
     RKH_TR_FWK_STATE(me, &Logic_C1);
+    RKH_TR_FWK_STATE(me, &Logic_C2);
+    RKH_TR_FWK_STATE(me, &Logic_C3);
+    RKH_TR_FWK_STATE(me, &Logic_C4);
+    RKH_TR_FWK_STATE(me, &Logic_C5);
 
     RKH_TR_FWK_SIG(evSaltEnable);
     RKH_TR_FWK_SIG(evSaltDisable);
     RKH_TR_FWK_SIG(evSaltTimeoutStop);
-
+    RKH_TR_FWK_SIG(evSaltTimeoutGPS);
+    RKH_TR_FWK_SIG(evSaltTimeoutCmd);
+    RKH_TR_FWK_SIG(evSaltTimeout);
+    RKH_TR_FWK_SIG(evSaltCmd);
+    RKH_TR_FWK_SIG(evVel);
+    RKH_TR_FWK_SIG(evVelHasler);
+    RKH_TR_FWK_SIG(evVelExternal);
+    RKH_TR_FWK_SIG(evVelGPS);
 
     RKH_SET_STATIC_EVENT(RKH_UPCAST(RKH_EVT_T, &(me->itsLogicVel.velEvt)), evVel);
     RKH_TMR_INIT(&me->timerStop, &e_tOutStop, NULL);
     RKH_TMR_INIT(&me->timerGpsEnable, &e_tOutGps, NULL);
     RKH_TMR_INIT(&me->timerCmdTimeout, &e_tOutCmd, NULL);
+    RKH_TMR_INIT(&(me->itsLogicVel.timer), &e_timeout, NULL);
 
+    RKH_FILTER_OFF_SMA(Logic_logicVel);
 
+    me->itsLogicVel.velEvt.source = VEL_SOURCE_NULL;
+    me->itsLogicVel.velEvt.vel = -1;
     me->currentCmd = SALT_CMD_ORDER_AUTOMATIC;
     me->cmdTimeout = CMD_TIMEOUT_DEFAULT;
     me->velCtOn = CT_ON_DEFAULT;
@@ -456,6 +492,9 @@ static void init(Logic *const me, RKH_EVT_T *pe){
     me->timeBlinkDisable = T_BLINK_DISABLE_DEFAULT;
     me->blinkPeriod = T_BLINK_PERIOD_DEFAULT;
     me->blinkCount = 0;
+    me->publishPeriod = PUBLISH_PERIOD_DEFAULT;
+
+    rkh_sm_init(RKH_UPCAST(RKH_SM_T, &me->itsLogicVel));
 }
 
 /* ............................ Effect actions ............................. */
@@ -532,7 +571,10 @@ static void effect_cmd(Logic *const me, RKH_EVT_T *pe){
                     me->timeBlinkDisable = RKH_TIME_MS(p->cmd.parameterValueDouble);
                     break;
                 case SALT_PARAMETER_PERIOD_BLINK:
-                    me->blinkPeriod = RKH_TIME_MS(p->cmd.parameterValueDouble);
+                    me->blinkPeriod = p->cmd.parameterValueDouble;
+                    break;
+                case SALT_PARAMETER_PUBLISH_PERIOD:
+                    me->publishPeriod = p->cmd.parameterValueDouble;
                     break;
                 default:
                     break;
@@ -557,41 +599,44 @@ static void effect_vel(Logic *const me, RKH_EVT_T *pe){
 static void effect_velHasler(LogicVel *const me, RKH_EVT_T *pe){
 
     VelEvt* p = RKH_UPCAST(VelEvt, pe);
+    Logic *realMe = me->itsLogic;
 
     rkh_tmr_stop(&me->timer);
-    RKH_TMR_ONESHOT(&me->timer, RKH_UPCAST(RKH_SMA_T, me), WAIT_SOURCE_VEL_PERIOD);
+    RKH_TMR_ONESHOT(&me->timer, RKH_UPCAST(RKH_SMA_T, realMe), WAIT_SOURCE_VEL_PERIOD);
 
     me->velEvt.source = p->source;
     me->velEvt.vel = p->vel;
 
-    RKH_SMA_POST_FIFO(logic, RKH_UPCAST(RKH_EVT_T, &(me->velEvt)), me);
+    RKH_SMA_POST_FIFO(logic, RKH_UPCAST(RKH_EVT_T, &(me->velEvt)), realMe);
 }
 
 static void effect_velExternal(LogicVel *const me, RKH_EVT_T *pe) {
 
     VelEvt* p = RKH_UPCAST(VelEvt, pe);
+    Logic *realMe = me->itsLogic;
 
     rkh_tmr_stop(&me->timer);
-    RKH_TMR_ONESHOT(&me->timer, RKH_UPCAST(RKH_SMA_T, me), WAIT_SOURCE_VEL_PERIOD);
+    RKH_TMR_ONESHOT(&me->timer, RKH_UPCAST(RKH_SMA_T, realMe), WAIT_SOURCE_VEL_PERIOD);
 
     me->velEvt.source = p->source;
     me->velEvt.vel = p->vel;
 
-    RKH_SMA_POST_FIFO(logic, RKH_UPCAST(RKH_EVT_T, &(me->velEvt)), me);
+    RKH_SMA_POST_FIFO(logic, RKH_UPCAST(RKH_EVT_T, &(me->velEvt)), realMe);
 
 }
 
 static void effect_velGps(LogicVel *const me, RKH_EVT_T *pe){
 
     VelEvt* p = RKH_UPCAST(VelEvt, pe);
+    Logic *realMe = me->itsLogic;
 
     rkh_tmr_stop(&me->timer);
-    RKH_TMR_ONESHOT(&me->timer, RKH_UPCAST(RKH_SMA_T, me), WAIT_SOURCE_VEL_PERIOD);
+    RKH_TMR_ONESHOT(&me->timer, RKH_UPCAST(RKH_SMA_T, realMe), WAIT_SOURCE_VEL_PERIOD);
 
     me->velEvt.source = p->source;
     me->velEvt.vel = p->vel;
 
-    RKH_SMA_POST_FIFO(logic, RKH_UPCAST(RKH_EVT_T, &(me->velEvt)), me);
+    RKH_SMA_POST_FIFO(logic, RKH_UPCAST(RKH_EVT_T, &(me->velEvt)), realMe);
 
 }
 
@@ -696,26 +741,27 @@ static void entry_controlBlinkBrake(Logic *const me){
 }
 
 static void entry_hasler(LogicVel *const me){
-    RKH_TMR_INIT(&me->timer, &e_timeout, NULL);
+    Logic *realMe = me->itsLogic;
     rkh_tmr_stop(&me->timer);
-    RKH_TMR_ONESHOT(&me->timer, RKH_UPCAST(RKH_SMA_T, me), WAIT_SOURCE_VEL_PERIOD);
+    RKH_TMR_ONESHOT(&me->timer, RKH_UPCAST(RKH_SMA_T, realMe), WAIT_SOURCE_VEL_PERIOD);
 }
 
 static void entry_external(LogicVel *const me){
-    RKH_TMR_INIT(&me->timer, &e_timeout, NULL);
+    Logic *realMe = me->itsLogic;
     rkh_tmr_stop(&me->timer);
-    RKH_TMR_ONESHOT(&me->timer, RKH_UPCAST(RKH_SMA_T, me), WAIT_SOURCE_VEL_PERIOD);
+    RKH_TMR_ONESHOT(&me->timer, RKH_UPCAST(RKH_SMA_T, realMe), WAIT_SOURCE_VEL_PERIOD);
 }
 
 static void entry_gps(LogicVel *const me){
-    RKH_TMR_INIT(&me->timer, &e_timeout, NULL);
+    Logic *realMe = me->itsLogic;
     rkh_tmr_stop(&me->timer);
-    RKH_TMR_ONESHOT(&me->timer, RKH_UPCAST(RKH_SMA_T, me), WAIT_SOURCE_VEL_PERIOD);
+    RKH_TMR_ONESHOT(&me->timer, RKH_UPCAST(RKH_SMA_T, realMe), WAIT_SOURCE_VEL_PERIOD);
 }
 
 static void entry_missing(LogicVel *const me){
+    Logic *realMe = me->itsLogic;
     me->velEvt.vel = -1;
-    RKH_SMA_POST_FIFO(logic, RKH_UPCAST(RKH_EVT_T, &(me->velEvt)), me);
+    RKH_SMA_POST_FIFO(logic, RKH_UPCAST(RKH_EVT_T, &(me->velEvt)), realMe);
 }
 
 /* ............................. Exit actions ............................. */
@@ -791,15 +837,15 @@ static void exit_controlBlinkBrake(Logic *const me){
 
 
 static void exit_hasler(LogicVel *const me){
-    rkh_tmr_stop(&me->timer);
+    //rkh_tmr_stop(&me->timer);
 }
 
 static void exit_external(LogicVel *const me){
-    rkh_tmr_stop(&me->timer);
+    //rkh_tmr_stop(&me->timer);
 }
 
 static void exit_gps(LogicVel *const me){
-    rkh_tmr_stop(&me->timer);
+    //rkh_tmr_stop(&me->timer);
 }
 
 static void exit_missing(LogicVel *const me){
@@ -842,7 +888,8 @@ rbool_t guard_cmdAutomatic(Logic *const me, RKH_EVT_T *pe){
 }
 
 rbool_t guard_cmdAutomaticNot(Logic *const me, RKH_EVT_T *pe){
-    return !guard_cmdAutomatic(me,pe);
+    CmdEvt* p = RKH_UPCAST(CmdEvt, pe);
+    return p->cmd.type == SALT_CMD_TYPE_CMD && p->cmd.cmd != SALT_CMD_ORDER_AUTOMATIC;
 }
 
 rbool_t guard_currentCmdStop(Logic *const me, RKH_EVT_T *pe){
@@ -908,7 +955,7 @@ rbool_t guard_velRightVel(LogicVel *const me, RKH_EVT_T *pe){
 
     VelEvt* p = RKH_UPCAST(VelEvt, pe);
 
-    return p->vel >= 0;
+    return p->source < VEL_SOURCE_COUNT && p->vel >= 0;
 }
 
 rbool_t guard_velWrongVel(LogicVel *const me, RKH_EVT_T *pe){
@@ -927,11 +974,12 @@ void logic_ctor(LogicCfg *config){
     me->itsLogicVel.itsLogic = me;
     RKH_SM_INIT((RKH_SM_T *)&(me->itsLogicVel), logicVel, 0, HCAL,
                 LogicVel_Hasler, NULL, NULL);
+    Logic_logicVel = (RKH_SM_T *)&(me->itsLogicVel);
 }
 
 void logic_getData(LogicData* data){
     Logic *me = RKH_DOWNCAST(Logic, logic);
-    data->cmdTimeout = me->cmdTimeout;
+    data->cmdTimeout = RKH_TICK_TO_MS(me->cmdTimeout);
     data->blinkPeriod = me->blinkPeriod;
     data->timeBlinkDisable = me->timeBlinkDisable;
     data->timeBlinkEnable = me->timeBlinkEnable;
@@ -943,6 +991,12 @@ void logic_getData(LogicData* data){
     data->vel = me->itsLogicVel.velEvt.vel;
     data->velSource = me->itsLogicVel.velEvt.source;
     data->alMode = me->ledConfig.ledIsolated == GREEN;
+    data->publishPeriod = me->publishPeriod;
+}
+
+rui16_t logic_getPublishPeriod(){
+    Logic *me = RKH_DOWNCAST(Logic, logic);
+    return me->publishPeriod;
 }
 
 /* ------------------------------ End of file ------------------------------ */

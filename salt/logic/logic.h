@@ -68,22 +68,27 @@ extern "C" {
 /**
  * Specifies default FE hold time.
  */
-#define T_HOLD_DEFAULT   30.0
+#define T_HOLD_DEFAULT   RKH_TIME_MS(30000)
 
 /**
  * Specifies default Blink enable time.
  */
-#define T_BLINK_ENABLE_DEFAULT   5.0
+#define T_BLINK_ENABLE_DEFAULT   RKH_TIME_MS(5000)
 
 /**
  * Specifies default Blink disable time.
  */
-#define T_BLINK_DISABLE_DEFAULT   10.0
+#define T_BLINK_DISABLE_DEFAULT   RKH_TIME_MS(10000)
 
 /**
  * Specifies default Blink cycle period.
  */
 #define T_BLINK_PERIOD_DEFAULT   5
+
+/**
+ * Specifies default mqtt publish period.
+ */
+#define PUBLISH_PERIOD_DEFAULT 10
 
 /* ................................ Signals ................................ */
 /* ........................ Declares active object ......................... */
@@ -101,6 +106,8 @@ typedef enum VEL_SOURCE{
     VEL_SOURCE_TELOC,
     VEL_SOURCE_EXTERNAL,
     VEL_SOURCE_GPS,
+    VEL_SOURCE_COUNT,
+    VEL_SOURCE_NULL,
 }VEL_SOURCE;
 
 typedef struct VelEvt VelEvt;
@@ -120,7 +127,7 @@ struct CmdEvt
 
 typedef struct LogicData
 {
-    RKH_TNT_T cmdTimeout;
+    rui16_t cmdTimeout;
     double velCtOn;
     double velCtOff;
     double velFeOn;
@@ -134,12 +141,14 @@ typedef struct LogicData
     float vel;
     VEL_SOURCE velSource;
     rbool_t alMode;
+    rui16_t publishPeriod
 } LogicData;
 
 /* -------------------------- External variables --------------------------- */
 /* -------------------------- Function prototypes -------------------------- */
 void logic_ctor(LogicCfg *config);
 void logic_getData(LogicData* data);
+rui16_t logic_getPublishPeriod();
 
 /* -------------------- External C language linkage end -------------------- */
 #ifdef __cplusplus

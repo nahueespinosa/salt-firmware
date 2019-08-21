@@ -27,6 +27,7 @@
 #include "mqtt.h"
 #include "epoch.h"
 #include "date.h"
+#include "bsp.h"
 
 /* ----------------------------- Local macros ------------------------------ */
 /* ......................... Declares active object ........................ */
@@ -419,7 +420,7 @@ init(MQTTProt *const me, RKH_EVT_T *pe)
     RKH_TR_FWK_SIG(evWaitSyncTout);
     RKH_TR_FWK_SIG(evUnlocked);
     RKH_TR_FWK_SIG(RKH_COMPLETION_EVENT);
-    RKH_FILTER_OFF_SMA(MQTTProt_syncRegion);
+    //RKH_FILTER_OFF_SMA(MQTTProt_syncRegion);
 
     RKH_SET_STATIC_EVENT(RKH_UPCAST(RKH_EVT_T, &evSendObj), evSend);
     RKH_SET_STATIC_EVENT(RKH_UPCAST(RKH_EVT_T, &evConnRefusedObj), 
@@ -446,6 +447,10 @@ publish(MQTTProt *const me, RKH_EVT_T *pe)
                                appMsg.data, 
                                appMsg.size, 
                                (me->config->qos << 1) & 0x06);
+
+    RKH_TRC_USR_BEGIN(USR_TRACE_MQTT)
+        RKH_TUSR_STR("MQTT send");
+    RKH_TRC_USR_END();
 }
 
 static void 

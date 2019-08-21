@@ -21,13 +21,14 @@
 
 /* ----------------------------- Local macros ------------------------------ */
 /* ------------------------------- Constants ------------------------------- */
+#define ERROR_COUNT_THR 5
 
 
 /* ---------------------------- Local data types --------------------------- */
 /* ---------------------------- Global variables --------------------------- */
 /* ---------------------------- Local variables ---------------------------- */
 onRelayErrorCb_t onRelayErrorCb;
-
+ri8_t error[NUM_RELAY];
 
 /* ----------------------- Local function prototypes ----------------------- */
 /* ---------------------------- Local functions ---------------------------- */
@@ -35,6 +36,9 @@ onRelayErrorCb_t onRelayErrorCb;
 void relayInit(onRelayErrorCb_t errorCb){
     onRelayErrorCb = errorCb;
     relayInitBsp();
+    for (int i = 0; i < NUM_RELAY; ++i) {
+        error[i] = 0;
+    }
 }
 
 void relaySetAlEnable(rbool_t enable){
@@ -59,8 +63,16 @@ void relaySetFEActive(rbool_t active){
 }
 void relayUpdate(){
     for (int i = 0; i < NUM_RELAY; ++i) {
-        if(relayGetActivated(i) != relayReadStatus(i)){
-            onRelayErrorCb(i);
+        rbool_t relayStatus = relayReadStatus(i);
+        rbool_t relayActivation = relayGetActivated(i);
+        if(relayActivation != relayStatus ){
+            error[i]++;
+            if (error[i] >= ERROR_COUNT_THR){
+                error[i] = 0;
+                onRelayErrorCb(i);
+            }
+        } else {
+            error[i] = 0;
         }
     }
 }

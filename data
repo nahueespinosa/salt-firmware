@@ -1,1 +1,83 @@
 sim808 A imei: 865067029722561
+
+report format:
+{
+  "imei": "865067029722561",
+  "cmd_timeout": 5000,
+  "vel_ct_on": 30,
+  "vel_ct_off": 25,
+  "vel_fe_on": 36,
+  "time_fe_hold": 3000,
+  "time_blink_enable": 500,
+  "time_blink_disable": 1000,
+  "period_blink": 5,
+  "cmd": "automatic",
+  "vel": 20.80991,
+  "vel_source": "external",
+  "al_mode": true
+}
+
+cmd examples to "/salt/cmd":
+{
+  "type": "cmd",
+  "cmd": "total_stop"
+}
+{
+  "type": "cmd",
+  "cmd": "drift"
+}
+{
+  "type": "cmd",
+  "cmd": "total_isolated"
+}
+{
+  "type": "cmd",
+  "cmd": "automatic"
+}
+
+{
+  "type": "config",
+  "parameter": "cmd_timeout",
+  "value": 4000
+}
+{
+  "type": "config",
+  "parameter": "vel_ct_on",
+  "value": 31.0
+}
+{
+  "type": "config",
+  "parameter": "vel_ct_off",
+  "value": 26.0
+}
+{
+  "type": "config",
+  "parameter": "vel_fe_on",
+  "value": 35.0
+}
+{
+  "type": "config",
+  "parameter": "time_fe_hold",
+  "value": 20000
+}
+{
+  "type": "config",
+  "parameter": "time_blink_enable",
+  "value": 4000
+}
+{
+  "type": "config",
+  "parameter": "time_blink_disable",
+  "value": 9000
+}
+{
+  "type": "config",
+  "parameter": "period_blink",
+  "value": 7
+}
+{
+  "type": "config",
+  "parameter": "publish_period",
+  "value": 5
+}
+

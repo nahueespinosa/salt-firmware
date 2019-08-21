@@ -50,6 +50,7 @@ extern "C" {
 #define MQTT_PARSE_PARAMETER_TIME_BLINK_ENABLE  "time_blink_enable"
 #define MQTT_PARSE_PARAMETER_TIME_BLINK_DISABLE "time_blink_disable"
 #define MQTT_PARSE_PARAMETER_PERIOD_BLINK       "period_blink"
+#define MQTT_PARSE_PARAMETER_PUBLISH_PERIOD     "publish_period"
 
 #define MQTT_PARSE_VALUE_KEY                "value"
 /* ------------------------------- Data types ------------------------------ */
@@ -57,6 +58,8 @@ typedef enum SALT_CMD_TYPE
 {
     SALT_CMD_TYPE_CMD,
     SALT_CMD_TYPE_CONFIG,
+    SALT_CMD_TYPE_COUNT,
+    SALT_CMD_TYPE_NULL,
 } SALT_CMD_TYPE;
 
 typedef enum SALT_CMD_ORDER
@@ -79,6 +82,9 @@ typedef enum SALT_PARAMETER
     SALT_PARAMETER_TIME_BLINK_ENABLE,
     SALT_PARAMETER_TIME_BLINK_DISABLE,
     SALT_PARAMETER_PERIOD_BLINK,
+    SALT_PARAMETER_PUBLISH_PERIOD,
+    SALT_PARAMETER_COUNT,
+    SALT_PARAMETER_NULL,
 } SALT_PARAMETER;
 
 typedef struct SaltCmd

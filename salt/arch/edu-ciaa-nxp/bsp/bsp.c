@@ -93,8 +93,6 @@ void
 bsp_timeTick(void)
 {
     ++tstamp;
-    
-    modPwr_ctrl(); //TODO me parece que esto esta mal aca, se repite en mTime
     mTime_tick();
 }
 

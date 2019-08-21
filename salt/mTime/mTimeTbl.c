@@ -36,7 +36,7 @@ static void(* const actions_100[])( void ) =
 #ifdef MODPWR_CTRL_ENABLE
 	modPwr_ctrl, 
 #endif
-    epoch_updateByStep,
+    //epoch_updateByStep,
     relayUpdate,
     //dIn_scan,
     NULL

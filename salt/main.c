@@ -34,6 +34,7 @@
 #include "modpwr.h"
 #include "teloc.h"
 #include "saltCmd.h"
+#include "mTime.h"
 
 #include "conmgr.h"
 #include "modmgr.h"
@@ -57,10 +58,11 @@
 /* ------------------------------- Constants ------------------------------- */
 
 #define PULSE_COUNTER_THR                   5
-#define PULSE_COUNTER_FACTOR                9.0432 // m/s_km/h(3.6) * pi * d_rueda(0.8m) / pulsos_revolucion(1)
+#define PULSE_COUNTER_FACTOR                0.904778684 // m/s_km/h(3.6) * pi * d_rueda(0.8m) / pulsos_revolucion(10)
 
-#define PWR_INPUT_SAMPLE_MIN                60 // 60V
-#define PWR_INPUT_SAMPLE_MAX                120 // 110V
+#define PWR_INPUT_SAMPLE_FACTOR             0.01628664 // 10k/(604k+10k) PWR*factor=sample
+#define PWR_INPUT_SAMPLE_MIN                (60*PWR_INPUT_SAMPLE_FACTOR) // 60V*factor=min_sample
+#define PWR_INPUT_SAMPLE_MAX                (120*PWR_INPUT_SAMPLE_FACTOR) // 110V*factor=max_sample
 
 /* ---------------------------- Local data types --------------------------- */
 
@@ -82,7 +84,7 @@ static MQTTProtCfg mqttProtCfg;
 static LogicCfg logicCfg;
 static ModCmdRcvHandler simACmdParser = NULL;
 static rbool_t initEnd = false;
-static rbool_t pwrCorrect = true;
+static rbool_t pwrCorrect = false;
 
 /* ----------------------- Local function prototypes ----------------------- */
 /* ---------------------------- Local functions ---------------------------- */
@@ -127,9 +129,13 @@ static void onRelayErrorCb(Relay_t relay){
     switch(relay){
         case feEn:
         case feDis:
-        case feAct:
         case ctEn:
         case ctDis:
+            if(onSwitchGet()){ //Esto es un error solo si el switch esta activado (sino es una inconsistencia dada por la posicion del switch)
+                RKH_SMA_POST_FIFO(logic, &e_SaltDisable, 0);
+            }
+            break;
+        case feAct:
         case ctAct:
             RKH_SMA_POST_FIFO(logic, &e_SaltDisable, 0);
             break;
@@ -164,29 +170,25 @@ static void debugCb(unsigned char c){
 #endif
 }
 
-static void onMQTTCb(void** state,struct mqtt_response_publish *publish){
+void onMQTTCb(void** state,struct mqtt_response_publish *publish){
     if(!initEnd){
         return;
     }
 
-    char* json = (char*) &(publish->application_message);
-    int result = saltCmdParse(json, publish->application_message_size,&(e_saltCmd.cmd));
+    //char dump1[255] = {0};
+    //char dump2[255] = {0};
+    //sprintf(dump1, "MQTT topic: %.*s", MIN(publish->topic_name_size,200), publish->topic_name);
+    //sprintf(dump2, "MQTT data: %.*s", MIN((int) publish->application_message_size,200), publish->application_message);
+    //RKH_TRC_USR_BEGIN(USR_TRACE_MQTT)
+    //    RKH_TUSR_STR(dump1);
+    //    RKH_TUSR_STR(dump2);
+    //RKH_TRC_USR_END();
+
+    int result = saltCmdParse((char *) publish->application_message, publish->application_message_size, &(e_saltCmd.cmd));
     if (result > 0){
         RKH_SMA_POST_FIFO(logic, RKH_UPCAST(RKH_EVT_T, &e_saltCmd), 0);
     }
 
-    /*
-    char dump1[255] = {0};
-    char dump2[255] = {0};
-
-    sprintf(dump1, "MQTT topic: %.*s", publish->topic_name_size, publish->topic_name);
-    sprintf(dump2, "MQTT data: %.*s", publish->application_message_size, publish->application_message);
-
-    RKH_TRC_USR_BEGIN(USR_TRACE_MQTT)
-        RKH_TUSR_STR(dump1);
-        RKH_TUSR_STR(dump2);
-    RKH_TRC_USR_END();
-    */
 }
 
 static void
@@ -208,6 +210,8 @@ saltConfig(void)
     onSwitchInit(onSwitchCb);
     pulseCounterInit(PULSE_COUNTER_THR,PULSE_COUNTER_FACTOR);
     telocInit();
+    //epoch_init();
+    mTime_init();
 
     sim808Init(SIM_808_A);
     serialSetIntCb(UART_SIM_808_A, simACb);
@@ -232,9 +236,9 @@ setupTraceFilters(void)
     RKH_FILTER_ON_GROUP(RKH_TRC_ALL_GROUPS);
     RKH_FILTER_ON_EVENT(RKH_TRC_ALL_EVENTS);
     //RKH_FILTER_OFF_EVENT(USR_TRACE);
-    RKH_FILTER_OFF_EVENT(USR_TRACE_OUT);
+    //RKH_FILTER_OFF_EVENT(USR_TRACE_OUT);
     //RKH_FILTER_OFF_EVENT(USR_TRACE_EVT);
-    RKH_FILTER_OFF_EVENT(USR_TRACE_IN);
+    //RKH_FILTER_OFF_EVENT(USR_TRACE_IN);
     //RKH_FILTER_OFF_EVENT(USR_TRACE_SSP);
     RKH_FILTER_OFF_EVENT(USR_TRACE_MQTT);
     //RKH_FILTER_OFF_GROUP_ALL_EVENTS(RKH_TG_USR);
@@ -245,8 +249,9 @@ setupTraceFilters(void)
     //RKH_FILTER_OFF_EVENT(RKH_TE_SM_TS_STATE);
     //RKH_FILTER_OFF_EVENT(RKH_TE_SM_DCH);
     //RKH_FILTER_OFF_SMA(modMgr);
-    RKH_FILTER_OFF_SMA(conMgr);
-    RKH_FILTER_OFF_SMA(mqttProt);
+    //RKH_FILTER_OFF_SMA(conMgr);
+    //RKH_FILTER_OFF_SMA(mqttProt);
+    RKH_FILTER_OFF_SMA(logic);
     RKH_FILTER_OFF_ALL_SIGNALS();
 }
 
@@ -281,7 +286,7 @@ main(int argc, char *argv[])
     rkh_fwk_registerEvtPool(evPool1Sto, SIZEOF_EP1STO, SIZEOF_EP1_BLOCK);
     rkh_fwk_registerEvtPool(evPool2Sto, SIZEOF_EP2STO, SIZEOF_EP2_BLOCK);
 
-    mqttProtCfg.publishTime = MAX_PUBLISH_TIME;
+    mqttProtCfg.publishTime = 5;
     mqttProtCfg.syncTime = 4;
     mqttProtCfg.keepAlive = 400;
     mqttProtCfg.qos = 1;

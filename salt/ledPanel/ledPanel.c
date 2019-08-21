@@ -86,7 +86,7 @@ void ledPanelSetCfg(LedPanelCfg* cfg){
 
     if(cfg->digit0 < NUM_COUNT){
         if(cfg->digit0 == NUM_DASH){
-            aux = alphaCodes[DIGIT_CODE_DASH];
+            aux = alphaCodes[DASH_ALPHA_POS];
         } else {
             aux = numeralCodes[cfg->digit0];
             if(cfg->pointPosition == 0){

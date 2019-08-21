@@ -45,7 +45,7 @@ void onSwitchInit(onSwitchCb_t cb){
     onSwitchSetIntCb(cb);
 
     // Configure On Switch Pin
-    gpioConfig( SWITCH_DIGITAL_PIN, GPIO_INPUT );
+    gpioConfig( SWITCH_DIGITAL_PIN, GPIO_INPUT_PULLUP );
 
     // Configure On Switch Pin Interrupt
     Chip_SCU_GPIOIntPinSel(PININT_SWITCH_INDEX, SWITCH_DIGITAL_PIN_GPIO_PORT, SWITCH_DIGITAL_PIN_GPIO_PIN);
@@ -63,7 +63,7 @@ void onSwitchInit(onSwitchCb_t cb){
 
 
 bool_t onSwitchGet(){
-    return gpioRead(SWITCH_DIGITAL_PIN);
+    return !gpioRead(SWITCH_DIGITAL_PIN);
 }
 
 void onSwitchSetIntCb( onSwitchCb_t cb ){

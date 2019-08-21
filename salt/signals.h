@@ -90,6 +90,7 @@ enum Signals
     evSaltTimeoutStop,
     evSaltTimeoutGPS,
     evSaltTimeoutCmd,
+    evSaltTimeout,
     evSaltCmd,
     evVel,
     evVelHasler,
