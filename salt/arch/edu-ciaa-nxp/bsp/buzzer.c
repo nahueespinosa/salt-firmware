@@ -38,7 +38,8 @@ void buzzerInitBsp(){
 }
 
 void buzzerSet(bool_t on){
-    gpioWrite( BUZZER_PIN, on);
+    //TODO volver a habilitar
+    //gpioWrite( BUZZER_PIN, on);
 }
 
 bool_t buzzerGet(){

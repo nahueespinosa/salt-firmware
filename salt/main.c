@@ -175,14 +175,14 @@ void onMQTTCb(void** state,struct mqtt_response_publish *publish){
         return;
     }
 
-    //char dump1[255] = {0};
-    //char dump2[255] = {0};
-    //sprintf(dump1, "MQTT topic: %.*s", MIN(publish->topic_name_size,200), publish->topic_name);
-    //sprintf(dump2, "MQTT data: %.*s", MIN((int) publish->application_message_size,200), publish->application_message);
-    //RKH_TRC_USR_BEGIN(USR_TRACE_MQTT)
-    //    RKH_TUSR_STR(dump1);
-    //    RKH_TUSR_STR(dump2);
-    //RKH_TRC_USR_END();
+    char dump1[255] = {0};
+    char dump2[255] = {0};
+    sprintf(dump1, "MQTT topic: %.*s", MIN(publish->topic_name_size,200), publish->topic_name);
+    sprintf(dump2, "MQTT data: %.*s", MIN((int) publish->application_message_size,200), publish->application_message);
+    RKH_TRC_USR_BEGIN(USR_TRACE_MQTT)
+        RKH_TUSR_STR(dump1);
+        RKH_TUSR_STR(dump2);
+    RKH_TRC_USR_END();
 
     int result = saltCmdParse((char *) publish->application_message, publish->application_message_size, &(e_saltCmd.cmd));
     if (result > 0){
@@ -274,6 +274,8 @@ main(int argc, char *argv[])
 {
 
     saltConfig();
+
+    //ledPanelTestSalt();
 
     rkh_fwk_init();
 

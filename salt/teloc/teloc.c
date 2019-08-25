@@ -29,8 +29,8 @@
 #define TELOC_FRAME_VEL_H_POS   6
 #define TELOC_FRAME_VEL_L_POS   7
 
-#define TELOC_FRAME_CRC_H_POS   7
-#define TELOC_FRAME_CRC_L_POS   7
+#define TELOC_FRAME_CRC_H_POS   28
+#define TELOC_FRAME_CRC_L_POS   29
 #define TELOC_FRAME_DATA_START  1
 #define TELOC_FRAME_DATA_LENGTH 27
 
@@ -92,12 +92,13 @@ void telocParse(unsigned char c){
         }
 
         uint16_t frameCrc = telocFrame[TELOC_FRAME_CRC_H_POS] << 8 | telocFrame[TELOC_FRAME_CRC_L_POS];
-        if(crc16(telocFrame+TELOC_FRAME_DATA_START,TELOC_FRAME_DATA_LENGTH) != frameCrc){
+        uint16_t dataCrc = crc16(telocFrame+TELOC_FRAME_DATA_START,TELOC_FRAME_DATA_LENGTH);
+        if(dataCrc != frameCrc){
             correctFrame = false; //Si el crc no coincide la trama es erronea
         }
 
         if(correctFrame){
-            uint16_t speedKmh = telocFrame[TELOC_FRAME_VEL_H_POS] << 8 | telocFrame[TELOC_FRAME_VEL_H_POS];
+            uint16_t speedKmh = telocFrame[TELOC_FRAME_VEL_H_POS] << 8 | telocFrame[TELOC_FRAME_VEL_L_POS];
             haslerVelEvt.vel = (float) speedKmh;
         } else {
             haslerVelEvt.vel = -1;
@@ -106,6 +107,12 @@ void telocParse(unsigned char c){
         nextTelocFrameByte = telocFrame;
     }
 
+}
+
+void telocTestSend(){
+    //               7E     A0      C1   00     78  00      00  64      00  64      00  00      86  77      20  20      20  20      00  7F      46  46      46  0A      12  00     00   00     7F   7C    7E
+    char data[] = {0x7E, 0xA0, 0xC1, 0x00, 0x78, 0x00, 0x00, 0x64, 0x00, 0x64, 0x00, 0x00, 0x86, 0x77, 0x20, 0x20, 0x20, 0x20, 0x00, 0x7F, 0x46, 0x46, 0x46, 0x0A, 0x12, 0x00, 0x00, 0x00, 0x7F, 0x7C, 0x7E};
+    serialPutChars(UART_TELOC_1500, data, 31);
 }
 
 /* ------------------------------ End of file ------------------------------ */

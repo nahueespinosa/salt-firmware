@@ -25,6 +25,8 @@
 #include "pulseCounter.h"
 #include "buzzer.h"
 #include "relay.h"
+#include "teloc.h"
+#include "bsp.h"
 
 /* ----------------------------- Local macros ------------------------------ */
 /* ------------------------------- Constants ------------------------------- */
@@ -47,6 +49,9 @@ static void(* const actions_1000[])( void ) =
     pulseCounterUpdate,
     buzzerUpdate,
     anInCaptureAndFilter,
+#ifdef TELOC_TEST
+    telocTestSend,
+#endif
     NULL
 };
 

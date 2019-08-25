@@ -30,6 +30,7 @@ const rui8_t * const alphaCodes = digitCodeMap + 10;
 /* ---------------------------- Global variables --------------------------- */
 /* ---------------------------- Local variables ---------------------------- */
 rui8_t digits[NUM_DIGITS];
+LedPanelCfg intConfig;
 /* ----------------------- Local function prototypes ----------------------- */
 
 void ledPanelSetCfgInt(LedPanelCfg* cfg);
@@ -76,6 +77,18 @@ void ledPanelSetCfgInt(LedPanelCfg* cfg){
 void ledPanelInit(void){
 
     as1116Init(GPIO6);
+    intConfig.ledOn = LED_OFF;
+    intConfig.ledGps = LED_OFF;
+    intConfig.ledFe = LED_OFF;
+    intConfig.ledCt = LED_OFF;
+    intConfig.ledRemoteOp = LED_OFF;
+    intConfig.ledIsolated = LED_OFF;
+    intConfig.pointPosition = -1;
+    intConfig.digit0 = NUM_NULL;
+    intConfig.digit1 = NUM_NULL;
+    intConfig.digit2 = NUM_NULL;
+    intConfig.digit3 = NUM_NULL;
+    ledPanelSetCfg(&intConfig);
 
 }
 
@@ -86,61 +99,69 @@ void ledPanelSetCfg(LedPanelCfg* cfg){
 
     if(cfg->digit0 < NUM_COUNT){
         if(cfg->digit0 == NUM_DASH){
-            aux = alphaCodes[DASH_ALPHA_POS];
+            aux = digitCodeMap[DASH_ALPHA_POS];
         } else {
             aux = numeralCodes[cfg->digit0];
-            if(cfg->pointPosition == 0){
-                aux |= numeralCodes[PERIOD_ALPHA_POS];
-            }
         }
-        cfg->digit0 = aux;
+        if(cfg->pointPosition == 0){
+            aux |= digitCodeMap[PERIOD_ALPHA_POS];
+        }
     } else {
-        cfg->digit0 = 0x00;
+        aux = 0x00;
     }
+    intConfig.digit0 = aux;
 
     if(cfg->digit1 < NUM_COUNT){
         if(cfg->digit1 == NUM_DASH){
-            aux = alphaCodes[DASH_ALPHA_POS];
+            aux = digitCodeMap[DASH_ALPHA_POS];
         } else {
             aux = numeralCodes[cfg->digit1];
-            if(cfg->pointPosition == 1){
-                aux |= numeralCodes[PERIOD_ALPHA_POS];
-            }
         }
-        cfg->digit1 = aux;
+        if(cfg->pointPosition == 1){
+            aux |= digitCodeMap[PERIOD_ALPHA_POS];
+        }
     } else {
-        cfg->digit1 = 0x00;
+        aux = 0x00;
     }
+    intConfig.digit1 = aux;
 
     if(cfg->digit2 < NUM_COUNT){
         if(cfg->digit2 == NUM_DASH){
-            aux = alphaCodes[DASH_ALPHA_POS];
+            aux = digitCodeMap[DASH_ALPHA_POS];
         } else {
             aux = numeralCodes[cfg->digit2];
-            if(cfg->pointPosition == 2){
-                aux |= numeralCodes[PERIOD_ALPHA_POS];
-            }
         }
-        cfg->digit2 = aux;
+        if(cfg->pointPosition == 2){
+            aux |= digitCodeMap[PERIOD_ALPHA_POS];
+        }
     } else {
-        cfg->digit2 = 0x00;
+        aux = 0x00;
     }
+    intConfig.digit2 = aux;
 
     if(cfg->digit3 < NUM_COUNT){
         if(cfg->digit3 == NUM_DASH){
-            aux = alphaCodes[DASH_ALPHA_POS];
+            aux = digitCodeMap[DASH_ALPHA_POS];
         } else {
             aux = numeralCodes[cfg->digit3];
-            if(cfg->pointPosition == 3){
-                aux |= numeralCodes[PERIOD_ALPHA_POS];
-            }
         }
-        cfg->digit3 = aux;
+        if(cfg->pointPosition == 3){
+            aux |= digitCodeMap[PERIOD_ALPHA_POS];
+        }
     } else {
-        cfg->digit3 = 0x00;
+        aux = 0x00;
     }
+    intConfig.digit3 = aux;
 
-    ledPanelSetCfgInt(cfg);
+    intConfig.ledIsolated = cfg->ledIsolated;
+    intConfig.ledRemoteOp = cfg->ledRemoteOp;
+    intConfig.ledCt = cfg->ledCt;
+    intConfig.ledFe = cfg->ledFe;
+    intConfig.ledGps = cfg->ledGps;
+    intConfig.ledOn = cfg->ledOn;
+    intConfig.pointPosition = 0;
+
+    ledPanelSetCfgInt(&intConfig);
 }
 
 

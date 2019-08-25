@@ -46,21 +46,37 @@ void relaySetAlEnable(rbool_t enable){
     relaySetActivated(ctDis, enable);
     relaySetActivated(feEn, enable);
     relaySetActivated(feDis, enable);
+
+    relaySetActivated(reg1, enable);
 }
 void relaySetCTActive(rbool_t active){
     if(active && relayGetActivated(ctEn) && relayGetActivated(ctDis)){
         relaySetActivated(ctAct, RKH_TRUE);
+
+        relaySetActivated(reg2, RKH_TRUE);
     } else {
         relaySetActivated(ctAct, RKH_FALSE);
+
+        relaySetActivated(reg2, RKH_FALSE);
     }
+
 }
 void relaySetFEActive(rbool_t active){
     if(active && relayGetActivated(feEn) && relayGetActivated(feDis)){
         relaySetActivated(feAct, RKH_TRUE);
+
+        relaySetActivated(reg3, RKH_TRUE);
     } else {
         relaySetActivated(feAct, RKH_FALSE);
+
+        relaySetActivated(reg3, RKH_FALSE);
     }
 }
+
+void relaySetRemoteMode(rbool_t active){
+    relaySetActivated(reg4, active);
+}
+
 void relayUpdate(){
     for (int i = 0; i < NUM_RELAY; ++i) {
         rbool_t relayStatus = relayReadStatus(i);

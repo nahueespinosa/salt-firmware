@@ -145,6 +145,7 @@ RKH_CREATE_TRANS_TABLE(Logic_Enable)
                 RKH_TRINT(evSaltTimeoutGPS, NULL, effect_gpsTout),
                 RKH_TRINT(evSaltCmd, NULL, effect_cmd),
                 RKH_TRINT(evSaltTimeoutCmd, NULL, effect_cmdTOut),
+                RKH_TRINT(evVel, NULL, effect_vel),
 RKH_END_TRANS_TABLE
 
 RKH_CREATE_COND_STATE(Logic_C1);
@@ -212,8 +213,7 @@ RKH_CREATE_COMP_REGION_STATE(Logic_controlAutomatic, entry_controlAutomatic, exi
                              &Logic_C5, NULL,
                              RKH_NO_HISTORY, NULL, NULL, NULL, NULL);
 RKH_CREATE_TRANS_TABLE(Logic_controlAutomatic)
-                RKH_TRINT(evVel, guard_velRight, effect_vel),
-                RKH_TRREG(evVel, guard_velWrong, NULL, &Logic_controlBlink),
+                RKH_TRREG(evVel, guard_velWrong, effect_vel, &Logic_controlBlink),
 RKH_END_TRANS_TABLE
 
 RKH_CREATE_COND_STATE(Logic_C5);
@@ -372,15 +372,15 @@ static void
 setVelDisplay(Logic *me, VelEvt *velEvt, bool_t on)
 {
     if(on){
-        if(velEvt != NULL){
+        if(velEvt != NULL && velEvt->vel >= 0){
             char velStr[10];
             sprintf(velStr,"%5.1f",velEvt->vel);
 
-            me->ledConfig.pointPosition = 2;
-            me->ledConfig.digit0 = velStr[0] != ' ' ? velStr[0] : NUM_NULL;
-            me->ledConfig.digit1 = velStr[1] != ' ' ? velStr[1] : NUM_NULL;
-            me->ledConfig.digit2 = velStr[2] != ' ' ? velStr[2] : NUM_NULL;
-            me->ledConfig.digit3 = velStr[4] != ' ' ? velStr[4] : 0;
+            me->ledConfig.pointPosition = 1;
+            me->ledConfig.digit3 = velStr[0] != ' ' ? velStr[0] - '0' : NUM_NULL;
+            me->ledConfig.digit2 = velStr[1] != ' ' ? velStr[1] - '0' : NUM_NULL;
+            me->ledConfig.digit1 = velStr[2] != ' ' ? velStr[2] - '0' : NUM_NULL;
+            me->ledConfig.digit0 = velStr[4] != ' ' ? velStr[4] - '0' : 0;
 
         } else {
             me->ledConfig.pointPosition = -1;
@@ -493,6 +493,11 @@ static void init(Logic *const me, RKH_EVT_T *pe){
     me->blinkPeriod = T_BLINK_PERIOD_DEFAULT;
     me->blinkCount = 0;
     me->publishPeriod = PUBLISH_PERIOD_DEFAULT;
+    me->ledConfig.pointPosition = -1;
+    me->ledConfig.digit0 = NUM_NULL;
+    me->ledConfig.digit1 = NUM_NULL;
+    me->ledConfig.digit2 = NUM_NULL;
+    me->ledConfig.digit3 = NUM_NULL;
 
     rkh_sm_init(RKH_UPCAST(RKH_SM_T, &me->itsLogicVel));
 }
@@ -662,6 +667,7 @@ entry_enable(Logic *const me)
     (void)me;
 
     configAlCtFe(me, RKH_TRUE, RKH_FALSE, RKH_FALSE);
+    setVelDisplay(me, NULL, true);
     me->ledConfig.ledGps = RED;
     me->ledConfig.ledRemoteOp = RED;
 
@@ -680,6 +686,8 @@ entry_preventiveStop(Logic *const me)
 }
 
 static void entry_remote(Logic *const me){
+    relaySetRemoteMode(RKH_TRUE);
+
     me->ledConfig.ledRemoteOp = GREEN;
     ledPanelSetCfg(&(me->ledConfig));
 }
@@ -787,6 +795,8 @@ exit_preventiveStop(Logic *const me)
 }
 
 static void exit_remote(Logic *const me){
+    relaySetRemoteMode(RKH_FALSE);
+
     me->ledConfig.ledRemoteOp = RED;
     ledPanelSetCfg(&(me->ledConfig));
 }

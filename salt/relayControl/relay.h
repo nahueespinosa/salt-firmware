@@ -55,6 +55,7 @@ void relayInit(onRelayErrorCb_t errorCb);
 void relaySetAlEnable(rbool_t enable);
 void relaySetCTActive(rbool_t active);
 void relaySetFEActive(rbool_t active);
+void relaySetRemoteMode(rbool_t active);
 void relayUpdate();
 /* -------------------- External C language linkage end -------------------- */
 #ifdef __cplusplus

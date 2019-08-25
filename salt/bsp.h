@@ -42,6 +42,7 @@ extern "C" {
 
 #define SEND_TRACE
 //#define DEBUG_SERIAL_PASS
+//#define TELOC_TEST
 
 /*
  * User trace events id�s

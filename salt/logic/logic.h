@@ -48,7 +48,7 @@ extern "C" {
 /**
  * Specifies time of gps active link.
  */
-#define CMD_TIMEOUT_DEFAULT   RKH_TIME_MS(5000)
+#define CMD_TIMEOUT_DEFAULT   RKH_TIME_MS(60000)
 
 /**
  * Specifies default CT on vel.
@@ -88,7 +88,7 @@ extern "C" {
 /**
  * Specifies default mqtt publish period.
  */
-#define PUBLISH_PERIOD_DEFAULT 10
+#define PUBLISH_PERIOD_DEFAULT 5
 
 /* ................................ Signals ................................ */
 /* ........................ Declares active object ......................... */

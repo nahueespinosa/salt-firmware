@@ -35,6 +35,7 @@ extern "C" {
 void telocInit();
 void telocParse(unsigned char c);
 
+void telocTestSend();
 /* -------------------- External C language linkage end -------------------- */
 #ifdef __cplusplus
 }
