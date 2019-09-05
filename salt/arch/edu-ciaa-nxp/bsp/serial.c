@@ -87,23 +87,40 @@ void serialInit(serialMap_t serialMap){
 
         case UART_TELOC_1500:
             Chip_UART_Init(UART_TELOC_1500_LPC);
-            Chip_UART_SetBaud(UART_TELOC_1500_LPC, UART_TELOC_1500_BAUDRATE);  /* Set Baud rate */
-            Chip_UART_SetupFIFOS(UART_TELOC_1500_LPC, UART_FCR_FIFO_EN | UART_FCR_TX_RS | UART_FCR_RX_RS | UART_FCR_TRG_LEV0 ); /* Modify FCR (FIFO Control Register)*/
-            Chip_UART_TXEnable(UART_TELOC_1500_LPC); /* Enable UART Transmission */
-            //Chip_UART_SetRS485Flags()
-            Chip_UART_SetRS485Flags( LPC_USART0, UART_RS485CTRL_DCTRL_EN | UART_RS485CTRL_OINV_1 );
+
             uint32_t config = 0;
             uint32_t dataBits = 8;
             uint32_t stopBits = 1;
+            uartParity_t parity = UART_PARITY_NONE;
             config = (dataBits-5) | ((stopBits-1) << 2);
-            config |= UART_LCR_PARITY_DIS;
+            if( parity != UART_PARITY_NONE ){
+                config |= UART_LCR_PARITY_EN;
+                if( parity == UART_PARITY_EVEN ){
+                    config |= UART_LCR_PARITY_EVEN;
+                }
+                if( parity == UART_PARITY_ODD ){
+                    config |= UART_LCR_PARITY_ODD;
+                }
+            } else{
+                config |= UART_LCR_PARITY_DIS;
+            }
             // example: config = UART_LCR_WLEN8 | UART_LCR_SBS_1BIT | UART_LCR_PARITY_EN | UART_LCR_PARITY_EVEN;
-            Chip_UART_ConfigData( LPC_USART0, config );
+            Chip_UART_ConfigData( LPC_USART0, config );UART_LCR_SBS_1BIT UART_LCR_WLEN8
 
+            Chip_UART_SetBaud(UART_TELOC_1500_LPC, UART_TELOC_1500_BAUDRATE);  /* Set Baud rate */
+            Chip_UART_SetupFIFOS(UART_TELOC_1500_LPC, UART_FCR_FIFO_EN | UART_FCR_TX_RS | UART_FCR_RX_RS | UART_FCR_TRG_LEV0 ); /* Modify FCR (FIFO Control Register)*/
 
-            Chip_SCU_PinMux(6, 2, MD_PDN, FUNC2);              /* P6_2,FUNC1: UART0_DIR */
+            Chip_UART_ReadByte( UART_TELOC_1500_LPC );
+
+            Chip_UART_TXEnable(UART_TELOC_1500_LPC); /* Enable UART Transmission */
+            //Chip_UART_SetRS485Flags()
+
             Chip_SCU_PinMux(9, 5, MD_PDN, FUNC7);              /* P9_5,FUNC6: UART0_TXD */
             Chip_SCU_PinMux(9, 6, MD_PLN|MD_EZI|MD_ZI, FUNC7); /* P9_6,FUNC6: UART0_RXD */
+
+            Chip_UART_SetRS485Flags( LPC_USART0, UART_RS485CTRL_DCTRL_EN | UART_RS485CTRL_OINV_1 );
+
+            Chip_SCU_PinMux(6, 2, MD_PDN, FUNC2);              /* P6_2,FUNC1: UART0_DIR */
 
 
 
