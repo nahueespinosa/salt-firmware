@@ -59,7 +59,7 @@ void serialInit(serialMap_t serialMap){
     switch(serialMap){
         case UART_SIM_808_A:
             Chip_UART_Init(UART_SIM_808_A_LPC);
-            Chip_UART_SetBaud(UART_SIM_808_A_LPC, UART_SIM_808_A_BAUDRATE);  /* Set Baud rate */
+            uint32_t resultA = Chip_UART_SetBaud(UART_SIM_808_A_LPC, UART_SIM_808_A_BAUDRATE);  /* Set Baud rate */
             Chip_UART_SetupFIFOS(UART_SIM_808_A_LPC, UART_FCR_FIFO_EN | UART_FCR_TRG_LEV0); /* Modify FCR (FIFO Control Register)*/
             Chip_UART_TXEnable(UART_SIM_808_A_LPC); /* Enable UART Transmission */
             Chip_SCU_PinMux(2, 3, MD_PDN, FUNC2);              /* P2_3,FUNC2: UART3_TXD */
@@ -93,7 +93,9 @@ void serialInit(serialMap_t serialMap){
             uint32_t stopBits = 1;
             uartParity_t parity = UART_PARITY_NONE;
             config = (dataBits-5) | ((stopBits-1) << 2);
-            if( parity != UART_PARITY_NONE ){
+            if( parity == UART_PARITY_NONE ){
+                config |= UART_LCR_PARITY_DIS;
+            } else{
                 config |= UART_LCR_PARITY_EN;
                 if( parity == UART_PARITY_EVEN ){
                     config |= UART_LCR_PARITY_EVEN;
@@ -101,13 +103,11 @@ void serialInit(serialMap_t serialMap){
                 if( parity == UART_PARITY_ODD ){
                     config |= UART_LCR_PARITY_ODD;
                 }
-            } else{
-                config |= UART_LCR_PARITY_DIS;
             }
             // example: config = UART_LCR_WLEN8 | UART_LCR_SBS_1BIT | UART_LCR_PARITY_EN | UART_LCR_PARITY_EVEN;
-            Chip_UART_ConfigData( LPC_USART0, config );UART_LCR_SBS_1BIT UART_LCR_WLEN8
+            Chip_UART_ConfigData( LPC_USART0, config );
 
-            Chip_UART_SetBaud(UART_TELOC_1500_LPC, UART_TELOC_1500_BAUDRATE);  /* Set Baud rate */
+            uint32_t result = Chip_UART_SetBaudFDR(UART_TELOC_1500_LPC, UART_TELOC_1500_BAUDRATE);  /* Set Baud rate */
             Chip_UART_SetupFIFOS(UART_TELOC_1500_LPC, UART_FCR_FIFO_EN | UART_FCR_TX_RS | UART_FCR_RX_RS | UART_FCR_TRG_LEV0 ); /* Modify FCR (FIFO Control Register)*/
 
             Chip_UART_ReadByte( UART_TELOC_1500_LPC );
@@ -118,10 +118,17 @@ void serialInit(serialMap_t serialMap){
             Chip_SCU_PinMux(9, 5, MD_PDN, FUNC7);              /* P9_5,FUNC6: UART0_TXD */
             Chip_SCU_PinMux(9, 6, MD_PLN|MD_EZI|MD_ZI, FUNC7); /* P9_6,FUNC6: UART0_RXD */
 
-            Chip_UART_SetRS485Flags( LPC_USART0, UART_RS485CTRL_DCTRL_EN | UART_RS485CTRL_OINV_1 );
+            //Chip_UART_SetRS485Flags( LPC_USART0, UART_RS485CTRL_DCTRL_EN | UART_RS485CTRL_OINV_1 );
+            //Chip_SCU_PinMux(6, 2, MD_PDN, FUNC1);              /* P6_2,FUNC1: UART0_DIR */
 
-            Chip_SCU_PinMux(6, 2, MD_PDN, FUNC2);              /* P6_2,FUNC1: UART0_DIR */
-
+            int8_t pinNamePort = 6;
+            int8_t pinNamePin  = 2;
+            int8_t func        = FUNC0;
+            int8_t gpioPort    = 3;
+            int8_t gpioPin     = 1;
+            //Chip_SCU_PinMux( pinNamePort, pinNamePin, SCU_MODE_INACT | SCU_MODE_ZIF_DIS | SCU_MODE_INBUFF_EN,func );
+			//Chip_GPIO_SetDir( LPC_GPIO_PORT, gpioPort, ( 1 << gpioPin ), GPIO_OUTPUT );
+			//Chip_GPIO_SetPinState( LPC_GPIO_PORT, gpioPort, gpioPin, 0);
 
 
             Chip_UART_IntEnable(UART_TELOC_1500_LPC, UART_IER_RBRINT ); //Receiver Buffer Register Interrupt

@@ -38,11 +38,11 @@ extern "C" {
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 /* -------------------------------- Constants ------------------------------ */
 
-#define DEBUG_SERIAL
+//#define DEBUG_SERIAL
 
 #define SEND_TRACE
 //#define DEBUG_SERIAL_PASS
-#define TELOC_TEST
+//#define TELOC_TEST
 
 /*
  * User trace events id�s

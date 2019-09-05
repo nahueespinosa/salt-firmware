@@ -113,6 +113,8 @@ void telocTestSend(){
     //               7E     A0      C1   00     78  00      00  64      00  64      00  00      86  77      20  20      20  20      00  7F      46  46      46  0A      12  00     00   00     7F   7C    7E
     char data[] = {0x7E, 0xA0, 0xC1, 0x00, 0x78, 0x00, 0x00, 0x64, 0x00, 0x64, 0x00, 0x00, 0x86, 0x77, 0x20, 0x20, 0x20, 0x20, 0x00, 0x7F, 0x46, 0x46, 0x46, 0x0A, 0x12, 0x00, 0x00, 0x00, 0x7F, 0x7C, 0x7E};
     serialPutChars(UART_TELOC_1500, data, 31);
+    //char data[] = {0x7E};
+    //serialPutChars(UART_TELOC_1500, data, 1);
 }
 
 /* ------------------------------ End of file ------------------------------ */
