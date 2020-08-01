@@ -9,7 +9,7 @@ El equipo toma el control de las señales de corte de tracción y freno de emerg
 
 ### Diagrama de bloques funcionales
 
-![Diagrama de Bloques Funcionales](doc/diagrama_conceptual.jpeg)
+![Diagrama de Bloques Funcionales](doc/diagrama_bloques.png)
 
 ## Configuración
 
